@@ -41,14 +41,16 @@ class LlmRag_PromptEngineering:
 
     def create_prompt(self,question,data):
         return self.prompt_engineering.replace("{question}",question).replace("{data}",data)
-
-    def model_generate(self,text,max_new_tokens=100):
+    
+    def model_generate(self,text,max_new_tokens=100,limit=1):
+        data_text=""
+        for i in self.query(text,limit):data_text+="\n"+i
         if self.local:
-            return self.model.generate(self.create_prompt(text,self.query(text,1)[0]),stream=True,max_new_tokens=max_new_tokens)
+            return self.model.generate(self.create_prompt(text,data_text),stream=True,max_new_tokens=max_new_tokens)
         else:
             stream= self.client_api.chat.completions.create(
                 model=self.model,
-                messages=[{"role": "user","content": self.create_prompt(text,self.query(text,1)[0])}],
+                messages=[{"role": "user","content": self.create_prompt(text,data_text)}],
                 max_tokens=512*5,
                 temperature=0.6,
                 top_p=1,
@@ -56,9 +58,6 @@ class LlmRag_PromptEngineering:
             )
             for chunk in stream:
                 if chunk.choices[0].delta.content is not None: yield chunk.choices[0].delta.content
-
-       
-
 
     def get_data(self,filter="id >= 0"):
             keys=self.client_db.query(collection_name= self.collection_name,filter=filter,output_fields=["*"],limit=1)[0].keys()
