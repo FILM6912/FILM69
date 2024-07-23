@@ -46,7 +46,7 @@ class LlmRag_PromptEngineering:
         if self.local:
             return self.model.generate(self.create_prompt(text,self.query(text,1)[0]),stream=True,max_new_tokens=max_new_tokens)
         else:
-            return self.client_api.chat.completions.create(
+            stream= self.client_api.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user","content": self.create_prompt(text,self.query(text,1)[0])}],
                 max_tokens=512*5,
@@ -54,6 +54,10 @@ class LlmRag_PromptEngineering:
                 top_p=1,
                 stream=True,
             )
+            for chunk in stream:
+                if chunk.choices[0].delta.content is not None: yield chunk.choices[0].delta.content
+
+       
 
 
     def get_data(self,filter="id >= 0"):
