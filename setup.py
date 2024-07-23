@@ -11,7 +11,7 @@ setup(
        "llama-index-vector-stores-milvus==0.1.20",
        "llama-index==0.10.52",
        "llama-index-embeddings-huggingface==0.2.2",
-       "pymilvus==3.0.1",
+       "pymilvus==2.4.4",
        "openai",
        "accelerate"
     ],
