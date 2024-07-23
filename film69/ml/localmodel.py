@@ -57,7 +57,7 @@ class LocalModel:
             return text_out
         
 if __name__ == "__main__":
-    model=localModel("d:\Model_LLM\\typhoon-7b-instruct-02-19-2024")
+    model=LocalModel("d:\Model_LLM\\typhoon-7b-instruct-02-19-2024")
     for i in model.generate("คุณคือ",stream=True,max_new_tokens=100):
         print(i,end="")
     print(model.history)
