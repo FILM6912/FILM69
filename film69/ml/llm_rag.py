@@ -16,7 +16,7 @@ class LlmRag_PromptEngineering:
         self.text="text"
         self.collection_name="collection"
         self.local=local
-        if is_chat:
+        if not is_chat:
             self.client_db = MilvusClient(self.database)
             self.client_db.create_collection(
             collection_name= self.collection_name,
