@@ -65,8 +65,6 @@ class LlmRag_PromptEngineering:
                 model=self.model,
                 messages=[{"role": "user","content": text}],
                 max_tokens=max_new_tokens,
-                temperature=0.6,
-                top_p=1,
                 stream=True,
             )
             for chunk in stream:
@@ -82,8 +80,6 @@ class LlmRag_PromptEngineering:
                 model=self.model,
                 messages=[{"role": "user","content": self.create_prompt(text,data_text)}],
                 max_tokens=max_new_tokens,
-                temperature=0.6,
-                top_p=1,
                 stream=True,
             )
             for chunk in stream:
