@@ -4,7 +4,7 @@ from sentence_transformers import SentenceTransformer, util
 from pymilvus import MilvusClient,Collection
 from openai import OpenAI
 import json
-from film69.ml.localmodel import LocalModel
+from film69.ml.model import LLMModel
 import random
 
 class LlmRag_PromptEngineering:
@@ -22,7 +22,7 @@ class LlmRag_PromptEngineering:
             collection_name= self.collection_name,
             dimension=int(len(query_embedding))
             )
-        if self.local==True:self.model=LocalModel(model)
+        if self.local==True:self.model=LLMModel(model)
         else:
             if api_key!=None:
                 self.client_api = OpenAI(
