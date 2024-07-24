@@ -5,16 +5,22 @@ from pymilvus import MilvusClient,Collection
 from openai import OpenAI
 import json
 from film69.ml.localmodel import LocalModel
+import random
 
 class LlmRag_PromptEngineering:
     def __init__(self,database:str="data.db",embedding:str='kornwtp/SCT-KD-model-XLMR',model:str ="typhoon-v1.5-instruct",local:bool=False,api_key:str=None):
         self.model_vec = SentenceTransformer(embedding)
         self.database=database
-        self.client_db = MilvusClient(self.database)
+        query_embedding = self.model_vec.encode("hi")
         self.vector_name="vector"
         self.text="text"
         self.collection_name="collection"
         self.local=local
+        self.client_db = MilvusClient(self.database)
+        self.client_db.create_collection(
+        collection_name= self.collection_name,
+        dimension=int(len(query_embedding))
+        )
         if self.local==True:self.model=LocalModel(model)
         else:
             self.client_api = OpenAI(
@@ -39,9 +45,17 @@ class LlmRag_PromptEngineering:
 """
 
 
+    def generate_unique_ids(self,existing_ids, num_ids, id_length=10):
+        characters = '0123456789'
+        new_ids = []
+        while len(new_ids) < num_ids:
+            new_id = ''.join(random.choices(characters, k=id_length))
+            if new_id not in existing_ids and new_id not in new_ids:new_ids.append(int(new_id))
+        return new_ids
+
     def create_prompt(self,question,data):
         return self.prompt_engineering.replace("{question}",question).replace("{data}",data)
-    
+
     def model_generate(self,text,max_new_tokens=100,limit=1):
         data_text=""
         for i in self.query(text,limit):data_text+="\n"+i
@@ -59,9 +73,12 @@ class LlmRag_PromptEngineering:
             for chunk in stream:
                 if chunk.choices[0].delta.content is not None: yield chunk.choices[0].delta.content
 
+    
     def get_data(self,filter="id >= 0"):
-            keys=self.client_db.query(collection_name= self.collection_name,filter=filter,output_fields=["*"],limit=1)[0].keys()
-            res = self.client_db.query(collection_name= self.collection_name,filter=filter,output_fields=[i for i in keys if i !=self.vector_name],)
+            try:
+                keys=self.client_db.query(collection_name= self.collection_name,filter=filter,output_fields=["*"],limit=1)[0].keys()
+                res = self.client_db.query(collection_name= self.collection_name,filter=filter,output_fields=[i for i in keys if i !=self.vector_name],)
+            except:return [{"id":"No information"}]
             return res
     
     def delete(self,id:list[int]):
@@ -75,27 +92,50 @@ class LlmRag_PromptEngineering:
             res = self.client_db.search(collection_name= self.collection_name,data=[query_embedding],output_fields=["id",self.text],limit=limit)
             return [i["entity"][self.text] for i in res[0]]
             
-    def update(self,data_update:dict[list]={"text":[]}):
+    def create(self,data_update:dict[list]={"text":[]}):
+        data=[]
+        vec=self.model_vec.encode(data_update["text"])
+        print(len(data_update["text"]))
+        if "id" not in data_update.keys():
+            dict_list = [ast.literal_eval(str(item)) for item in self.get_data()]
+            ids=self.generate_unique_ids(pd.DataFrame(dict_list)["id"].values,int(len(data_update["text"])))
+            data_update["id"]=ids
+        for i in range(len(data_update["text"])):
+            data.append({self.text: data_update["text"][i],self.vector_name:vec[i]})
+            for j in data_update.keys():
+                if j!="text":data[-1][j]=data_update[j][i]
+
+        res = self.client_db.insert(collection_name= self.collection_name,data=data)
+        return res
+            
+    def update(self,data_update:dict[list]={"id":[],"text":[]}):
+
         data=[]
         vec=self.model_vec.encode(data_update["text"])
         for i in range(len(data_update["text"])):
             data.append({self.text: data_update["text"][i],self.vector_name:vec[i]})
             for j in data_update.keys():
                 if j!="text":data[-1][j]=data_update[j][i]
-
-        self.client_db.create_collection(
-        collection_name= self.collection_name,
-        auto_id=True,
-        dimension=int(len(data[0][self.vector_name]))
-        )
-        res = self.client_db.insert(collection_name= self.collection_name,data=data)
+        res = self.client_db.upsert(collection_name= self.collection_name,data=data)
         return res
     
 if __name__ == '__main__':
-    x=LlmRag_PromptEngineering("data/data.db")
-    # x.update({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
+    x=LlmRag_PromptEngineering("data/data.db",api_key="sk-m7jPZrZO873FSLx5MHIjH6VEPEzCAtwRwYIXGNOH6KJiLC9i")
+    # x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
     #           "date":["55","66"]})
-    print(x.query("คุณคือ"))
-    # dict_list = [ast.literal_eval(str(item)) for item in x.get()]
+    
+    print(x.query("สร่างโดย"))
+    # print(x.get_data())
+
+    # dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
     # print(pd.DataFrame(dict_list))
+
+    # print(x.update({
+    #      "id":[1250834420,3771826426],
+    #      "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
+    #      "date":["01","00"]
+    #      }))
+    # dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
+    # print(pd.DataFrame(dict_list))
+
 
