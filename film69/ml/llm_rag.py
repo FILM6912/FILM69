@@ -24,7 +24,8 @@ class LlmRag_PromptEngineering:
             )
         if self.local==True:self.model=LocalModel(model)
         else:
-            self.client_api = OpenAI(
+            if api_key!=None:
+                self.client_api = OpenAI(
                 api_key=api_key,
                 base_url="https://api.opentyphoon.ai/v1",)
             self.model=model
