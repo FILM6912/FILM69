@@ -1,21 +1,59 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer,TextIteratorStreamer
 import torch
 from threading import Thread
-
-class LocalModel:
-    def __init__(self, model_name):
-        # model_name="d:\Model_LLM\llama-3-typhoon-v1.5x-8b-instruct"
-        self.model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="cuda")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
+from openai import OpenAI
+class LLMModel:
+    def __init__(self, 
+                 model_name:str="d:\Model_LLM\llama-3-typhoon-v1.5x-8b-instruct",
+                 local:bool=True,api=OpenAI(
+                        api_key="your_api_key",
+                        base_url="https://api.opentyphoon.ai/v1",)):
+        self.local=local
+        self.model_name=model_name
+        if local:
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch.bfloat16, device_map="cuda")
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
+        else:self.api=api
         self.history=[{"role":"user","content":"คุณคือผู้ช่วยชื่อ เสี่ยวซี่(XiaoXi) เป็นผู้หญิงและให้ตอบว่าคะ"},]
         print("Model and tokenizer loaded successfully")
 
     def generate(self,text,max_new_tokens=512,stream=False):
+        if self.local:return self.generate_locals(text,max_new_tokens,stream)
+        else:return self.generate_api(text,max_new_tokens,stream)
+
+    def generate_api(self,text,max_new_tokens=512,stream=False):
+        self.history.append({"role":"user","content":text})
+        text_out=""
+        if stream:
+            def inner():
+                response= self.api.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user","content": text}],
+                max_tokens=max_new_tokens,
+                stream=True,)
+                text_out=""
+                for chunk in response:
+                    if chunk.choices[0].delta.content is not None: 
+                        text_out+=chunk.choices[0].delta.content
+                        yield chunk.choices[0].delta.content
+                self.history.append({"role": "system","content": text_out})
+            return inner()
+            
+        else:
+            response= self.api.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user","content": text}],
+                max_tokens=max_new_tokens,
+            )
+            text_out=response.choices[0].message.content
+            self.history.append({"role": "system","content": text_out})
+        return text_out
+
+    def generate_locals(self,text,max_new_tokens=512,stream=False):
         self.history.append({"role":"user","content":text})
         input_ids = self.tokenizer.apply_chat_template(self.history,add_generation_prompt=True,return_tensors="pt").to(self.model.device)
         terminators = [self.tokenizer.eos_token_id,self.tokenizer.convert_tokens_to_ids("<|eot_id|>")]
-
         if stream==True:
             thread = Thread(target=self.model.generate, kwargs=
                             {"input_ids": input_ids,
@@ -57,9 +95,11 @@ class LocalModel:
             return text_out
         
 if __name__ == "__main__":
-    model=LocalModel("d:\Model_LLM\\typhoon-7b-instruct-02-19-2024")
-    for i in model.generate("คุณคือ",stream=True,max_new_tokens=100):
-        print(i,end="")
-    print(model.history)
-    print(model.generate("คุณทำอะไรได้บ้าง",max_new_tokens=100))
-    print(model.history)
+    api=OpenAI(api_key="your_api_key",base_url="https://api.opentyphoon.ai/v1",)
+    model=LLMModel(api=api,model_name="typhoon-v1.5x-70b-instruct",local=False)
+    # for i in model.generate("คุณคือ",stream=True,max_new_tokens=100):
+    #     print(i,end="")
+    # print(model.history)
+    # print("\n*"*50)
+    print(model.generate_api("รู้จักประเทศไทยไหม",max_new_tokens=100))
+    # print(model.history)
