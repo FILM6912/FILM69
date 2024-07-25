@@ -133,7 +133,7 @@ class LlmRag_PromptEngineering:
         return res
     
 if __name__ == '__main__':
-    x=LlmRag_PromptEngineering("data/data.db",api_key="sk-m7jPZrZO873FSLx5MHIjH6VEPEzCAtwRwYIXGNOH6KJiLC9i")
+    x=LlmRag_PromptEngineering("data/data.db",api_key="")
     # x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
     #           "date":["55","66"]})
     
