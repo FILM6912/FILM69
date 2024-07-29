@@ -7,11 +7,14 @@ class LLMModel:
                  model_name:str="d:\Model_LLM\llama-3-typhoon-v1.5x-8b-instruct",
                  local:bool=True,api=OpenAI(
                         api_key="your_api_key",
-                        base_url="https://api.opentyphoon.ai/v1",)):
+                        base_url="https://api.opentyphoon.ai/v1",),
+                 torch_type=torch.bfloat16,
+                 device_map="cuda"
+                        ):
         self.local=local
         self.model_name=model_name
         if local:
-            self.model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch.bfloat16, device_map="cuda")
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch_type, device_map=device_map)
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
         else:self.api=api

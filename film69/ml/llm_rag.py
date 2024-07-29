@@ -133,7 +133,7 @@ class LlmRag_PromptEngineering:
         return res
     
 if __name__ == '__main__':
-    x=LlmRag_PromptEngineering("data/data.db",api_key="")
+    x=LlmRag_PromptEngineering("data.db",api_key="sk-m7jPZrZO873FSLx5MHIjH6VEPEzCAtwRwYIXGNOH6KJiLC9i")
     # x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
     #           "date":["55","66"]})
     
@@ -142,13 +142,20 @@ if __name__ == '__main__':
 
     # dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
     # print(pd.DataFrame(dict_list))
+    print(x.create({
+         "id":[1250834420,3771826426],
+         "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
+         "create_date":["01","00"],
+         "last_update":["01","00"],
+         "diseases":["bdhjwed","djiqawhidshowq"]
+         }))
 
     # print(x.update({
     #      "id":[1250834420,3771826426],
     #      "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
     #      "date":["01","00"]
     #      }))
-    # dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
-    # print(pd.DataFrame(dict_list))
+    dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
+    print(pd.DataFrame(dict_list))
 
 
