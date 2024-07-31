@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
        "minimalmodbus",
-       "transformers==4.42.3",
+       "transformers",
        "sentence-transformers==3.0.1",
        "llama-index-vector-stores-milvus==0.1.20",
        "llama-index==0.10.52",
