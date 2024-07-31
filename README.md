@@ -28,7 +28,6 @@ x=LlmRag_PromptEngineering("data.db",api_key="")
          "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
          "create_date":["01","00"],
          "last_update":["01","00"],
-         "diseases":["bdhjwed","djiqawhidshowq"]
          }))
 
     print(x.update({
