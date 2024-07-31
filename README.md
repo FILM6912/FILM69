@@ -13,6 +13,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 ```
 ```python
 from film69.ml.llm_rag import LlmRag_PromptEngineering
+import ast
 x=LlmRag_PromptEngineering("data.db",api_key="")
     x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
                "date":["55","66"]})
