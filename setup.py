@@ -7,7 +7,7 @@ setup(
     install_requires=[
        "minimalmodbus",
        "transformers",
-       "sentence-transformers==3.0.1",
+       "sentence-transformers",
        "llama-index-vector-stores-milvus==0.1.20",
        "llama-index==0.10.52",
        "llama-index-embeddings-huggingface==0.2.2",
