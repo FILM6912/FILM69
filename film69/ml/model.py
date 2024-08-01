@@ -26,7 +26,7 @@ class LLMModel:
         else:return self.generate_api(text,max_new_tokens,stream,history_save)
 
     def generate_api(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
-        if history_save:self.history.append({"role":"user","content":text})
+        self.history.append({"role":"user","content":text})
         text_out=""
         if stream:
             def inner():
@@ -41,6 +41,7 @@ class LLMModel:
                         text_out+=chunk.choices[0].delta.content
                         yield chunk.choices[0].delta.content
                 if history_save:self.history.append({"role": "system","content": text_out})
+                else:self.history.pop()
             return inner()
             
         else:
@@ -51,6 +52,7 @@ class LLMModel:
             )
             text_out=response.choices[0].message.content
             if history_save:self.history.append({"role": "system","content": text_out})
+            else:self.history.pop()
         return text_out
 
     def generate_locals(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
@@ -79,6 +81,7 @@ class LLMModel:
                         text_out+=new_text
                         yield  new_text
                 if history_save:self.history.append({"role": "system","content": text_out})
+                else:self.history.pop()
 
                 thread.join() 
             return inner()
@@ -95,6 +98,7 @@ class LLMModel:
             text_out=self.tokenizer.decode(response, skip_special_tokens=True)
 
             if history_save:self.history.append({"role": "system","content": text_out})
+            else:self.history.pop()
             return text_out
         
 if __name__ == "__main__":
