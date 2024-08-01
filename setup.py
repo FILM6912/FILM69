@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.1.3',
+    version='0.1.4',
     packages=find_packages(),
     install_requires=[
        "minimalmodbus",
-       "transformers",
-       "sentence-transformers",
+       "transformers==4.42.3",
+       "sentence-transformers==3.0.1",
        "llama-index-vector-stores-milvus==0.1.20",
        "llama-index==0.10.52",
        "llama-index-embeddings-huggingface==0.2.2",

@@ -21,12 +21,12 @@ class LLMModel:
         self.history=[{"role":"user","content":"คุณคือผู้ช่วยชื่อ เสี่ยวซี่(XiaoXi) เป็นผู้หญิงและให้ตอบว่าคะ"},]
         print("Model and tokenizer loaded successfully")
 
-    def generate(self,text,max_new_tokens=512,stream=False):
-        if self.local:return self.generate_locals(text,max_new_tokens,stream)
-        else:return self.generate_api(text,max_new_tokens,stream)
+    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
+        if self.local:return self.generate_locals(text,max_new_tokens,stream,history_save)
+        else:return self.generate_api(text,max_new_tokens,stream,history_save)
 
-    def generate_api(self,text,max_new_tokens=512,stream=False):
-        self.history.append({"role":"user","content":text})
+    def generate_api(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
+        if history_save:self.history.append({"role":"user","content":text})
         text_out=""
         if stream:
             def inner():
@@ -40,7 +40,7 @@ class LLMModel:
                     if chunk.choices[0].delta.content is not None: 
                         text_out+=chunk.choices[0].delta.content
                         yield chunk.choices[0].delta.content
-                self.history.append({"role": "system","content": text_out})
+                if history_save:self.history.append({"role": "system","content": text_out})
             return inner()
             
         else:
@@ -50,11 +50,11 @@ class LLMModel:
                 max_tokens=max_new_tokens,
             )
             text_out=response.choices[0].message.content
-            self.history.append({"role": "system","content": text_out})
+            if history_save:self.history.append({"role": "system","content": text_out})
         return text_out
 
-    def generate_locals(self,text,max_new_tokens=512,stream=False):
-        self.history.append({"role":"user","content":text})
+    def generate_locals(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
+        if history_save:self.history.append({"role":"user","content":text})
         input_ids = self.tokenizer.apply_chat_template(self.history,add_generation_prompt=True,return_tensors="pt").to(self.model.device)
         terminators = [self.tokenizer.eos_token_id,self.tokenizer.convert_tokens_to_ids("<|eot_id|>")]
         if stream==True:
@@ -78,7 +78,7 @@ class LLMModel:
                     if i!=1:
                         text_out+=new_text
                         yield  new_text
-                self.history.append({"role": "system","content": text_out})
+                if history_save:self.history.append({"role": "system","content": text_out})
 
                 thread.join() 
             return inner()
@@ -94,7 +94,7 @@ class LLMModel:
             response = outputs[0][input_ids.shape[-1]:]
             text_out=self.tokenizer.decode(response, skip_special_tokens=True)
 
-            self.history.append({"role": "system","content": text_out})
+            if history_save:self.history.append({"role": "system","content": text_out})
             return text_out
         
 if __name__ == "__main__":
