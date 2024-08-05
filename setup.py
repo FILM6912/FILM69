@@ -2,18 +2,19 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.2.1',
+    version='0.2.3',
     packages=find_packages(),
     install_requires=[
        "minimalmodbus",
        "transformers",
        "sentence-transformers",
-       "llama-index-vector-stores-milvus==0.1.20",
+       "llama-index-vector-stores-milvus",
        "llama-index==0.10.52",
-       "llama-index-embeddings-huggingface==0.2.2",
-       "pymilvus==2.4.4",
+       "llama-index-embeddings-huggingface",
+       "pymilvus",
        "openai",
-       "accelerate"
+       "accelerate",
+       "git+https://github.com/unslothai/unsloth.git"
     ],
     author='Watcharaphon Pamayayang',
     author_email='filmmagic45@gmail.com',
