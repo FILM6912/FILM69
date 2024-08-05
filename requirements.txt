@@ -12,4 +12,4 @@ trl
 peft
 bitsandbytes
 git+https://github.com/unslothai/unsloth.git
-openai==1.39.0
+openai==1.38.0
