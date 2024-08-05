@@ -5,7 +5,7 @@ llama-index-vector-stores-milvus
 llama-index==0.10.52
 llama-index-embeddings-huggingface
 pymilvus
-openai
+openai==1.39.0
 accelerate
 datasets
 xformers
