@@ -9,7 +9,7 @@ setup(
        "transformers",
        "sentence-transformers",
        "llama-index-vector-stores-milvus",
-       "llama-index==0.10.52",
+       "llama-index",
        "llama-index-embeddings-huggingface",
        "pymilvus",
        "openai",
