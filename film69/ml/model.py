@@ -17,7 +17,8 @@ class LLMModel:
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
         else:self.api=api
-        self.history=[{"role":"user","content":"คุณคือผู้ช่วยชื่อ เสี่ยวซี่(XiaoXi) เป็นผู้หญิงและให้ตอบว่าคะ"},]
+        # self.history=[{"role":"user","content":"คุณคือผู้ช่วยชื่อ เสี่ยวซี่(XiaoXi) เป็นผู้หญิงและให้ตอบว่าคะ"},]
+        self.history=[]
         print("Model and tokenizer loaded successfully")
 
     def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
