@@ -15,10 +15,10 @@ setup(
         'openai',
         'accelerate',
         'datasets',
-        'xformers',
-        'trl',
         'peft',
         'bitsandbytes',
+        'xformers<0.0.27',
+        'trl<0.9.0',
         'unsloth @ git+https://github.com/unslothai/unsloth.git#egg=unsloth',
         # Add additional requirements if needed
     ],
