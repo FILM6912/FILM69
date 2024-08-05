@@ -117,8 +117,8 @@ class LLMModelTrain:
             **kwargs
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
-        model = FastLanguageModel.get_peft_model(
-            model,
+        self.model = FastLanguageModel.get_peft_model(
+            self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
             target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
                             "gate_proj", "up_proj", "down_proj",],
@@ -157,7 +157,7 @@ class LLMModelTrain:
 
     def trainer(self,max_seq_length=1024):
         self._trainer = SFTTrainer(
-            model = model,
+            model = self.model,
             tokenizer = self.tokenizer,
             train_dataset = self.dataset,
             dataset_text_field = "text",
