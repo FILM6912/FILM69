@@ -1,0 +1,15 @@
+minimalmodbus
+transformers
+sentence-transformers
+llama-index-vector-stores-milvus
+llama-index==0.10.52
+llama-index-embeddings-huggingface
+pymilvus
+openai
+accelerate
+datasets
+xformers
+trl
+peft
+bitsandbytes
+git+https://github.com/unslothai/unsloth.git
