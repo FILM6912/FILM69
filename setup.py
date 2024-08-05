@@ -14,7 +14,12 @@ setup(
        "pymilvus",
        "openai",
        "accelerate",
-       "git+https://github.com/unslothai/unsloth.git"
+       "git+https://github.com/unslothai/unsloth.git",
+       "datasets",
+       "xformers",
+       "trl",
+       "peft",
+       "bitsandbytes"
     ],
     author='Watcharaphon Pamayayang',
     author_email='filmmagic45@gmail.com',
