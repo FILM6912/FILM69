@@ -155,7 +155,7 @@ class LLMModelTrain:
         self.dataset=dataset.map(formatting_prompts_func, batched = True,)
         return self.dataset
 
-    def trainer(self,max_seq_length=1024):
+    def trainer(self,max_seq_length=1024,max_step=60,learning_rate=2e-4,output_dir = "outputs",**kwargs):
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.tokenizer,
@@ -169,8 +169,8 @@ class LLMModelTrain:
                 gradient_accumulation_steps = 4,
                 warmup_steps = 5,
                 # num_train_epochs = 1, # Set this for 1 full training run.
-                max_steps = 60,
-                learning_rate = 2e-4,
+                max_steps = max_step,
+                learning_rate = learning_rate,
                 fp16 = not is_bfloat16_supported(),
                 bf16 = is_bfloat16_supported(),
                 logging_steps = 1,
@@ -178,7 +178,8 @@ class LLMModelTrain:
                 weight_decay = 0.01,
                 lr_scheduler_type = "linear",
                 seed = 3407,
-                output_dir = "outputs",
+                output_dir = output_dir,
+                **kwargs
             ),
         )
         gpu_stats = torch.cuda.get_device_properties(0)
