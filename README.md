@@ -12,6 +12,7 @@ model=LLMModel(
     device_map="cuda",
     load_in_4bit=True,
     # load_in_8bit=True,
+    # low_cpu_mem_usage = True
 )
 for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
