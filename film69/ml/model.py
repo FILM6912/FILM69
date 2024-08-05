@@ -8,13 +8,12 @@ class LLMModel:
                  local:bool=True,api=OpenAI(
                         api_key="your_api_key",
                         base_url="https://api.opentyphoon.ai/v1",),
-                 torch_type=torch.bfloat16,
-                 device_map="cuda"
+                 **parametor_model
                         ):
         self.local=local
         self.model_name=model_name
         if local:
-            self.model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=torch_type, device_map=device_map)
+            self.model = AutoModelForCausalLM.from_pretrained(self.model_name,**parametor_model)
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
         else:self.api=api
