@@ -26,7 +26,7 @@ setup(
     'setuptools-scm',
     'packaging',
     'tyro',
-    'transformers',
+    'transformers>=4.44.0',
     'datasets',
     'sentencepiece',
     'tqdm',
