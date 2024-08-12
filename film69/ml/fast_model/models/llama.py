@@ -718,7 +718,7 @@ def LlamaModel_fast_forward(
         if IS_GEMMA2: mask = self.SWA_mask if (idx % 2 == 0) else self.GA_mask
 
         if offloaded_gradient_checkpointing:
-            hidden_states = _Offloaded_Gradient_Checkpointer.apply(
+            hidden_states = Unsloth_Offloaded_Gradient_Checkpointer.apply(
                 decoder_layer,
                 hidden_states,
                 mask,
