@@ -2,25 +2,8 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.2.7',
+    version='0.2.8',
     packages=find_packages(),
-    # install_requires=[
-    #     'minimalmodbus',
-    #     'transformers',
-    #     'sentence-transformers',
-    #     'llama-index-vector-stores-milvus',
-    #     'llama-index',
-    #     'llama-index-embeddings-huggingface',
-    #     'pymilvus',
-    #     'openai',
-    #     'accelerate',
-    #     'datasets',
-    #     'peft',
-    #     'bitsandbytes',
-    #     'trl<0.9.0',
-    #     'unsloth @ git+https://github.com/unslothai/unsloth.git#egg=unsloth',
-    #     # Add additional requirements if needed
-    # ],
     install_requires=[
     'setuptools',
     'setuptools-scm',
