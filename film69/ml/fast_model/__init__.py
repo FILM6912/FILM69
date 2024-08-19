@@ -31,13 +31,12 @@ class FastLLMTrain:
             loftq_config = None, # And LoftQ
         )
 
-    def load_dataset(self,df):
-        alpaca_prompt = """
+    def load_dataset(self,df,alpaca_prompt = """
         ### Instruction:
         {}
 
         ### Response:
-        {}"""
+        {}"""):
 
         EOS_TOKEN = self.tokenizer.eos_token # Must add EOS_TOKEN
         def formatting_prompts_func(examples):
