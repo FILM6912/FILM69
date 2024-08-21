@@ -567,7 +567,7 @@ def get_chat_template(
         # Check fast tokenizer
         if not is_fast_tokenizer:
             print(
-                f"Unsloth: Not a fast tokenizer, so can't process it as of yet :(\n"\
+                f"Not a fast tokenizer, so can't process it as of yet :(\n"\
                 "Please log a Github issue if you want this as a new feature!\n"\
                 "Your chat template will still work, but it won't add or edit tokens."
             )
@@ -594,7 +594,7 @@ def get_chat_template(
 
             if map_eos_token and (not stop_word in token_mapping.values()):
                 # Do not map 107 = <|im_end|> and 1 = <|im_end|>. This will reduce the vocab size by 1
-                logger.warning_once(f"Unsloth: Will map {stop_word} to EOS = {tokenizer.eos_token}.")
+                logger.warning_once(f"Will map {stop_word} to EOS = {tokenizer.eos_token}.")
                 string_vocab = string_vocab.replace(tokenizer.eos_token, stop_word)
             pass
 
@@ -627,7 +627,7 @@ def get_chat_template(
                 pass
 
         elif map_eos_token and (stop_word != "eos_token"):
-            logger.warning_once(f"Unsloth: Will map {stop_word} to EOS = {tokenizer.eos_token}.")
+            logger.warning_once(f"Will map {stop_word} to EOS = {tokenizer.eos_token}.")
 
             # Replaces the old EOS token with a new one.
             # Useful for ChatML <|im_end|> for example.
@@ -675,7 +675,7 @@ def get_chat_template(
 
     else:
         raise TypeError(
-            f"Unsloth: `chat_template` must be a tuple of (your_template, eos_token,) or one of\n"\
+            f"`chat_template` must be a tuple of (your_template, eos_token,) or one of\n"\
             f"{CHAT_TEMPLATES.keys()}"
         )
     pass
@@ -738,7 +738,7 @@ def _parse_combined_prompt(combined_prompt, dataset):
     for column in possible_columns:
         if column not in dataset_columns:
             raise KeyError(
-                f"Unsloth: Your prompt includes '{column}' but this does not exist in the dataset. "\
+                f"Your prompt includes '{column}' but this does not exist in the dataset. "\
                 f"Only allowed columns are {list(dataset_columns)}"
             )
         pass
@@ -846,7 +846,7 @@ def to_sharegpt(
     if "conversations" in dataset.column_names:
         convo = dataset[0]["conversations"]
         if type(convo) is list:
-            raise TypeError("Unsloth: Your dataset is probably already in ShareGPT format!")
+            raise TypeError("Your dataset is probably already in ShareGPT format!")
         pass
     pass
 
@@ -963,7 +963,7 @@ def standardize_sharegpt(
     leftover_aliases = (all_aliases | roles) - all_aliases
     if len(leftover_aliases) != 0:
         raise TypeError(
-            f"Unsloth: {list(leftover_aliases)} are not in aliases. Please update aliases."
+            f"{list(leftover_aliases)} are not in aliases. Please update aliases."
         )
     pass
 
@@ -1084,12 +1084,12 @@ extra_eos_tokens = None,
     for extra_eos in extra_eos_tokens:
         assert(type(extra_eos) is str)
         if extra_eos not in vocab:
-            raise ValueError(f"Unsloth: `{extra_eos}` is not a singular token in the tokenizer.")
+            raise ValueError(f"`{extra_eos}` is not a singular token in the tokenizer.")
         pass
     pass
 
     error_msg = \
-        "Unsloth: Your prompt template must have 2 examples showing the user input {INPUT} "\
+        "Your prompt template must have 2 examples showing the user input {INPUT} "\
         "and the assistant output {OUTPUT}\n\n"\
         "For example what is not allowed is just:\n"\
         "### Input:\\n{INPUT}\\n\\n### Response:\\n{OUTPUT}\\n\n\n"\
@@ -1102,7 +1102,7 @@ extra_eos_tokens = None,
         extra_eos_tokens.insert(0, tokenizer.eos_token)
     if len(extra_eos_tokens) == 0:
         raise RuntimeError(
-            "Unsloth: Your tokenizer does not have an EOS token? Please provide one via extra_eos_tokens!"
+            "Your tokenizer does not have an EOS token? Please provide one via extra_eos_tokens!"
         )
     pass
 
@@ -1115,7 +1115,7 @@ extra_eos_tokens = None,
         tokenizer_name.startswith(("unsloth/llama-3-8b", "unsloth/llama-3-70b")):
         # Warn
         logger.warning(
-            "Unsloth: Base llama-3 models did not train <|eot_id|>.\n"\
+            "Base llama-3 models did not train <|eot_id|>.\n"\
             "Please use the instruct version or use <|end_of_text|>"
         )
     pass
@@ -1186,7 +1186,7 @@ extra_eos_tokens = None,
             combined_changed = combined            .replace('\n', '\\n')
             left_changed     = final_combined_check.replace('\n', '\\n')
             raise RuntimeError(
-                "Unsloth: The prompt template you provided isn't correct. You gave:\n"\
+                "The prompt template you provided isn't correct. You gave:\n"\
                 f"{combined_changed}\n\n"\
                 "But we require the following:\n"\
                 f"{left_changed}"
@@ -1220,7 +1220,7 @@ extra_eos_tokens = None,
     pass
 
     if count_eos == 0:
-        logger.warning("Unsloth: We automatically added an EOS token to stop endless generations.")
+        logger.warning("We automatically added an EOS token to stop endless generations.")
         eos = extra_eos_tokens[0]
         output_part = output_part + eos
     pass
@@ -1293,7 +1293,7 @@ extra_eos_tokens = None,
 
         if "{SYSTEM}" in partial_system:
             if default_system_message is None:
-                raise RuntimeError("Unsloth: Please specify a default system message!")
+                raise RuntimeError("Please specify a default system message!")
         pass
 
         # Separate the BOS
@@ -1468,12 +1468,12 @@ def train_on_responses_only(
         not hasattr(tokenizer, "_unsloth_output_part"):
         
         if instruction_part is None or response_part is None:
-            raise ValueError("Unsloth: instruction_part and response_part must be given!")
+            raise ValueError("instruction_part and response_part must be given!")
         pass
     elif (instruction_part is not None or response_part is not None) and \
         (hasattr(tokenizer, "_unsloth_input_part") or hasattr(tokenizer, "_unsloth_output_part")):
 
-        raise ValueError("Unsloth: Your tokenizer already has instruction and response parts set - do not give custom ones!")
+        raise ValueError("Your tokenizer already has instruction and response parts set - do not give custom ones!")
     else:
         instruction_part = tokenizer._unsloth_input_part
         response_part    = tokenizer._unsloth_output_part

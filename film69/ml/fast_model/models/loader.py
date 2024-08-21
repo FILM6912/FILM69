@@ -154,7 +154,7 @@ class FastLanguageModel(FastLlamaModel):
         # Cannot be both!
         if is_model and is_peft:
             raise RuntimeError(
-                ": Your repo has a LoRA adapter and a base model.\n"\
+                "Your repo has a LoRA adapter and a base model.\n"\
                 "You have 2 files `config.json` and `adapter_config.json`.\n"\
                 "We must only allow one config file.\n"\
                 "Please separate the LoRA and base models to 2 repos."
@@ -164,7 +164,7 @@ class FastLanguageModel(FastLlamaModel):
             # Old transformers version
             if "rope_scaling" in error.lower() and not SUPPORTS_LLAMA31:
                 raise ImportError(
-                    f": Your transformers version of {transformers_version} does not support new RoPE scaling methods.\n"\
+                    f"Your transformers version of {transformers_version} does not support new RoPE scaling methods.\n"\
                     f"This includes Llama 3.1. The minimum required version is 4.43.2\n"\
                     f'Try `pip install --upgrade "transformers>=4.43.2"`\n'\
                     f"to obtain the latest transformers build, then restart this session."\
@@ -193,7 +193,7 @@ class FastLanguageModel(FastLlamaModel):
 
             if scaling_type == "llama3" and not SUPPORTS_LLAMA31:
                 raise ImportError(
-                    f": Your transformers version of {transformers_version} does not support Llama 3.1.\n"\
+                    f"Your transformers version of {transformers_version} does not support Llama 3.1.\n"\
                     f"The minimum required version is 4.43.2\n"\
                     f'Try `pip install --upgrade "transformers>=4.43.2"`\n'\
                     f"to obtain the latest transformers build, then restart this session."\
@@ -203,7 +203,7 @@ class FastLanguageModel(FastLlamaModel):
         elif model_type == "gemma":
             if not SUPPORTS_GEMMA:
                 raise ImportError(
-                    f": Your transformers version of {transformers_version} does not support Gemma.\n"\
+                    f"Your transformers version of {transformers_version} does not support Gemma.\n"\
                     f"The minimum required version is 4.38.\n"\
                     f'Try `pip install --upgrade "transformers>=4.38"`\n'\
                     f"to obtain the latest transformers build, then restart this session."\
@@ -212,7 +212,7 @@ class FastLanguageModel(FastLlamaModel):
         elif model_type == "gemma2":
             if not SUPPORTS_GEMMA2:
                 raise ImportError(
-                    f": Your transformers version of {transformers_version} does not support Gemma2.\n"\
+                    f"Your transformers version of {transformers_version} does not support Gemma2.\n"\
                     f"The minimum required version is 4.42.3.\n"\
                     f'Try `pip install --upgrade "transformers>=4.42.3"`\n'\
                     f"to obtain the latest transformers build, then restart this session."\
@@ -220,13 +220,13 @@ class FastLanguageModel(FastLlamaModel):
             # Also check for softcapping support in flash-attn which is faster!
             if is_bfloat16_supported() and not HAS_FLASH_ATTENTION:
                 print(
-                    ": If you want to finetune Gemma 2, install flash-attn to make it faster!\n"\
+                    "If you want to finetune Gemma 2, install flash-attn to make it faster!\n"\
                     "To install flash-attn, do the below:\n"\
                     '\npip install --no-deps --upgrade "flash-attn>=2.6.3"'
                 )
             elif HAS_FLASH_ATTENTION and not HAS_FLASH_ATTENTION_SOFTCAPPING:
                 print(
-                    ": If you want to finetune Gemma 2, upgrade flash-attn to version 2.6.3 or higher!\n"\
+                    "If you want to finetune Gemma 2, upgrade flash-attn to version 2.6.3 or higher!\n"\
                     "Newer versions support faster and less memory usage kernels for Gemma 2's attention softcapping!\n"\
                     "To update flash-attn, do the below:\n"\
                     '\npip install --no-deps --upgrade "flash-attn>=2.6.3"'
@@ -237,7 +237,7 @@ class FastLanguageModel(FastLlamaModel):
             dispatch_model = FastQwen2Model
         else:
             raise NotImplementedError(
-                f": {model_name} not supported yet!\n"\
+                f"{model_name} not supported yet!\n"\
                 "Make an issue to https://github.com/ai/!",
             )
         pass

@@ -71,9 +71,9 @@ class LlmRag_PromptEngineering:
             for chunk in stream:
                 if chunk.choices[0].delta.content is not None: yield chunk.choices[0].delta.content
 
-    def model_generate(self,text,max_new_tokens=100,limit=1):
+    def model_generate(self,text,max_new_tokens=100,limit=1,text_out=None):
         data_text=""
-        for i in self.query(text,limit):data_text+="\n"+i
+        for i in self.query(text,limit,text_out=text_out):data_text+="\n"+i
         if self.local:
             return self.model.generate(self.create_prompt(text,data_text),stream=True,max_new_tokens=max_new_tokens)
         else:
@@ -100,10 +100,12 @@ class LlmRag_PromptEngineering:
         ids=id
 )
 
-    def query(self,text,limit=1):
+    def query(self,text,limit=1,text_out=None):
+            text_out = self.text if text_out==None else text_out
             query_embedding = self.model_vec.encode(text)
-            res = self.client_db.search(collection_name= self.collection_name,data=[query_embedding],output_fields=["id",self.text],limit=limit)
-            return [i["entity"][self.text] for i in res[0]]
+            res = self.client_db.search(collection_name= self.collection_name,data=[query_embedding],output_fields=["id",text_out],limit=limit)
+            print(res)
+            return [i["entity"][text_out] for i in res[0]]
             
     def create(self,data_update:dict[list]={"text":[]}):
         data=[]
