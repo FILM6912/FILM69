@@ -104,7 +104,7 @@ class LlmRag_PromptEngineering:
             text_out = self.text if text_out==None else text_out
             query_embedding = self.model_vec.encode(text)
             res = self.client_db.search(collection_name= self.collection_name,data=[query_embedding],output_fields=["id",text_out],limit=limit)
-            print(res)
+            # print(res)
             return [i["entity"][text_out] for i in res[0]]
             
     def create(self,data_update:dict[list]={"text":[]}):
