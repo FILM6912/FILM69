@@ -40,6 +40,7 @@ setup(
             'transformers>=4.44.2',
             'sentencepiece',
             'numpy',
+            'pandas'
         ],
     },
     author='Watcharaphon Pamayayang',
