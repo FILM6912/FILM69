@@ -3,6 +3,10 @@
 ```sh
 pip install git+https://github.com/WATCHARAPHON6912/FILM69.git
 ```
+```sh
+pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag] --no-deps
+```
+
 ### example
 #### LLM
 ```python
