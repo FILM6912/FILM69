@@ -38,7 +38,7 @@ setup(
             'pymilvus',
             'openai',
             'transformers>=4.44.2',
-            'sentencepiece',
+            'sentence-transformers',
             'numpy',
             'pandas'
         ],
