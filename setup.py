@@ -5,6 +5,15 @@ setup(
     version='0.3.1',
     packages=find_packages(),
     install_requires=[
+            'pymilvus',
+            'openai',
+            'transformers>=4.44.2',
+            'sentence-transformers',
+            'numpy',
+            'pandas'
+        ],
+    extras_require={
+        'all': [
         'setuptools',
         'setuptools-scm',
         'packaging',
@@ -33,15 +42,6 @@ setup(
         'pymilvus',
         'openai',
     ],
-    extras_require={
-        'rag': [
-            'pymilvus',
-            'openai',
-            'transformers>=4.44.2',
-            'sentence-transformers',
-            'numpy',
-            'pandas'
-        ],
     },
     author='Watcharaphon Pamayayang',
     author_email='filmmagic45@gmail.com',
