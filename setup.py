@@ -2,18 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.3.1',
+    version='0.3.0',
     packages=find_packages(),
-    install_requires=[
-            'pymilvus',
-            'openai',
-            'transformers>=4.44.2',
-            'sentence-transformers',
-            'numpy',
-            'pandas'
-        ],
+    install_requires=[],
     extras_require={
-        'all': [
+        'all':[
+            'setuptools',
             'setuptools-scm',
             'packaging',
             'tyro',
@@ -41,6 +35,14 @@ setup(
             'pymilvus',
             'openai',
     ],
+        'rag': [
+            'pymilvus',
+            'openai',
+            'transformers>=4.44.2',
+            'sentence-transformers',
+            'numpy',
+            'pandas'
+        ],
     },
     author='Watcharaphon Pamayayang',
     author_email='filmmagic45@gmail.com',

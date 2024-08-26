@@ -1,10 +1,10 @@
 # FILM69
 ### install
 ```sh
-pip install git+https://github.com/WATCHARAPHON6912/FILM69.git
+pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[all]
 ```
 ```sh
-pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag] --no-deps
+pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
 ```
 
 ### example
