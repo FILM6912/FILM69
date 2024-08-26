@@ -34,6 +34,7 @@ setup(
             'llama-index-embeddings-huggingface',
             'pymilvus',
             'openai',
+            "pandas"
     ],
         'rag': [
             'pymilvus',
