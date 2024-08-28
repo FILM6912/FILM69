@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.3.1',
+    version='0.3.2',
     packages=find_packages(),
     install_requires=[],
     extras_require={
@@ -34,7 +34,8 @@ setup(
             'llama-index-embeddings-huggingface',
             'pymilvus',
             'openai',
-            "pandas"
+            "pandas",
+            "openpyxl"
     ],
         'rag': [
             'pymilvus',
@@ -42,7 +43,8 @@ setup(
             'transformers>=4.44.2',
             'sentence-transformers',
             'numpy',
-            'pandas'
+            'pandas',
+            "openpyxl"
         ],
     },
     author='Watcharaphon Pamayayang',
