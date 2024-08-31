@@ -46,7 +46,7 @@ x.prompt_engineering="""
     x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
                "date":["55","66"]})
     
-    print(x.query("สร่างโดย"))
+    print(x.query("สร้างโดย"))
     print(x.get_data())
 
     dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
