@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='film69',
-    version='0.3.2',
+    version='0.3.3',
     packages=find_packages(),
     install_requires=[],
     extras_require={

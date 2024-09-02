@@ -37,12 +37,13 @@ class LLMModel:
                 max_tokens=max_new_tokens,
                 stream=True,)
                 text_out=""
+                if history_save:self.history.append({"role": "system","content": text_out})
                 for chunk in response:
                     if chunk.choices[0].delta.content is not None: 
                         text_out+=chunk.choices[0].delta.content
+                        if history_save:self.history[-1]={"role": "system","content": text_out}
                         yield chunk.choices[0].delta.content
-                if history_save:self.history.append({"role": "system","content": text_out})
-                else:self.history.pop()
+                if not history_save:self.history.pop()
             return inner()
             
         else:
@@ -53,7 +54,7 @@ class LLMModel:
             )
             text_out=response.choices[0].message.content
             if history_save:self.history.append({"role": "system","content": text_out})
-            else:self.history.pop()
+            if not history_save:self.history.pop()
         return text_out
 
     def generate_locals(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
@@ -76,13 +77,14 @@ class LLMModel:
             def inner():
                 i=0
                 text_out=""
+                if history_save:self.history.append({"role": "system","content": text_out})
                 for new_text in self.streamer:
                     i+=1
                     if i!=1:
                         text_out+=new_text
+                        if history_save:self.history[-1]={"role": "system","content": text_out}
                         yield  new_text
-                if history_save:self.history.append({"role": "system","content": text_out})
-                else:self.history.pop()
+                if not history_save:self.history.pop()
 
                 thread.join() 
             return inner()
@@ -99,7 +101,7 @@ class LLMModel:
             text_out=self.tokenizer.decode(response, skip_special_tokens=True)
 
             if history_save:self.history.append({"role": "system","content": text_out})
-            else:self.history.pop()
+            if not history_save:self.history.pop()
             return text_out
         
 if __name__ == "__main__":
