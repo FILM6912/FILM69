@@ -35,7 +35,8 @@ setup(
             'pymilvus',
             'openai',
             "pandas",
-            "openpyxl"
+            "openpyxl",
+            "triton"
     ],
         'rag': [
             'pymilvus',
