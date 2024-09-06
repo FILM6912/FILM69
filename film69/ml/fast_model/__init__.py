@@ -1,11 +1,11 @@
 
-from .models.loader import FastLanguageModel
+from unsloth import FastLanguageModel
 import datasets
 import pandas as pd
 from trl import SFTTrainer
 from transformers import TrainingArguments
 import torch
-from .models._utils import is_bfloat16_supported
+from unsloth import is_bfloat16_supported
 
 class FastLLMTrain:
     def load_model(self,model_name,dtype=None,load_in_4bit=True,**kwargs):  
