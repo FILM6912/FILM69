@@ -46,7 +46,7 @@ all = [
     "pandas",
     "openpyxl",
     "triton",
-    "git+https://github.com/unslothai/unsloth.git"
+    "unsloth"
 ]
 rag = [
     "pymilvus",
