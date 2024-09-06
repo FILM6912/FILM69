@@ -1,11 +1,13 @@
 [project]
 name = "film69"
-version = "0.3.4"
+version = "0.4.0"
 description = ""  # Add your package's description here
 authors = [
     { name = "Watcharaphon Pamayayang", email = "filmmagic45@gmail.com" }
 ]
 urls = { "Homepage" = "https://github.com/watcharaphon6912" }
+
+unsloth = { git = "https://github.com/unslothai/unsloth.git" }
 
 [project.dependencies]
 # You can list base dependencies here if needed
