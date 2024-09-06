@@ -36,7 +36,8 @@ setup(
             'openai',
             "pandas",
             "openpyxl",
-            "triton"
+            "triton",
+            "git+https://github.com/unslothai/unsloth.git"
     ],
         'rag': [
             'pymilvus',
