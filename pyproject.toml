@@ -5,9 +5,8 @@ description = ""  # Add your package's description here
 authors = [
     { name = "Watcharaphon Pamayayang", email = "filmmagic45@gmail.com" }
 ]
-urls = { "Homepage" = "https://github.com/watcharaphon6912" }
+urls = { Homepage = "https://github.com/watcharaphon6912" }
 
-unsloth = { git = "https://github.com/unslothai/unsloth.git" }
 
 [project.dependencies]
 # You can list base dependencies here if needed
@@ -45,9 +44,9 @@ all = [
     "openai",
     "pandas",
     "openpyxl",
-    "triton",
-    "git+https://github.com/unslothai/unsloth.git"
+    "triton"
 ]
+
 rag = [
     "pymilvus",
     "openai",
