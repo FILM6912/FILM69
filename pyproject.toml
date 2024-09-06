@@ -44,12 +44,7 @@ all = [
     "openai",
     "pandas",
     "openpyxl",
-<<<<<<< HEAD
-    "triton"
-=======
     "triton",
-    "unsloth"
->>>>>>> 3b016b7cc77fb9331f3f726daa1cf8e963f83efe
 ]
 
 rag = [
