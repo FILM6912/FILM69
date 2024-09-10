@@ -10,7 +10,7 @@ pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
 ### example
 #### FastLLM
 ```python
-from film69.ml.fast_model import fast_model
+from film69.ml.fast_model import FastLLM
 model=FastLLM()
 model.load_model(
     "FILM6912/XiaoXi-TH-8B",
