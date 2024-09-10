@@ -8,11 +8,26 @@ pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
 ```
 
 ### example
+#### FastLLM
+```python
+from film69.ml.model import FastLLM
+model=FastLLM()
+model.load_model(
+    "FILM6912/XiaoXi-TH-8B",
+    device_map="cuda",
+    load_in_4bit=True,
+    # load_in_8bit=True,
+    # low_cpu_mem_usage = True
+    )
+for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
+    print(text,end="")
+print(model.generate("สวัสดี",max_new_tokens=200))
+```
 #### LLM
 ```python
 from film69.ml.model import LLMModel
 model=LLMModel(
-    "scb10x/typhoon-7b-instruct-02-19-2024",
+    "FILM6912/XiaoXi-TH-8B",
     device_map="cuda",
     load_in_4bit=True,
     # load_in_8bit=True,
@@ -43,24 +58,24 @@ x.prompt_engineering="""
 ### คำตอบ:
 กรุณาให้คำตอบที่แม่นยำและครอบคลุมทุกแง่มุมของคำถามที่ผู้ใช้ถาม โดยใช้ข้อมูลที่ให้ไว้ด้านบน โดยตอบแค่ที่ถามเท่านั้น
 """
-    x.create({"text":["คุณคือ ai ที่สร่างโดย film","คุณคือผู้ช่วย"],
-               "date":["55","66"]})
+    x.create({"text":["คุณคือผู้ช่วย"],
+               "date":["55"]})
     
-    print(x.query("สร้างโดย"))
+    print(x.query("คุณคือ"))
     print(x.get_data())
 
     dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
     print(pd.DataFrame(dict_list))
     print(x.create({
          "id":[1250834420,3771826426],
-         "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
-         "last_update":["01","00"],
+         "text":["คุณคือผู้ช่วย ai"],
+         "last_update":["01"],
          }))
 
     print(x.update({
          "id":[1250834420,3771826426],
-          "text":["สร่างโดย film69","คุณคือผู้ช่วย ai"],
-          "last_update":["02","01"],
+          "text":["คุณคือผู้ช่วย ai"],
+          "last_update":[,"01"],
           }))
     dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
     print(pd.DataFrame(dict_list))
