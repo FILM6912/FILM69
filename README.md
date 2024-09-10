@@ -23,6 +23,7 @@ for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
+
 #### LLM
 ```python
 from film69.ml.model import LLMModel
@@ -37,6 +38,18 @@ for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
+
+#### LLM API
+```python
+from film69.ml.model import LLMModel
+from openai import OpenAI
+api=OpenAI(api_key="your_api_key",base_url="https://api.opentyphoon.ai/v1",)
+model=LLMModel(api=api,model_name="typhoon-v1.5x-70b-instruct",local=False)
+for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
+    print(text,end="")
+print(model.generate("สวัสดี",max_new_tokens=200))
+```
+
 #### RAG+PromptEngineering
 ```python
 from film69.ml.llm_rag import LlmRag_PromptEngineering
