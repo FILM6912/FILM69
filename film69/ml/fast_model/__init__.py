@@ -103,7 +103,7 @@ class FastLLM:
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
         
         
-    def generate_locals(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
+    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
         self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
