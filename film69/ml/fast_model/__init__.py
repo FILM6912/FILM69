@@ -21,6 +21,9 @@ class FastLLM:
             **kwargs
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
+        
+
+    def load_dataset(self,df):
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -35,10 +38,6 @@ class FastLLM:
             use_rslora = False,  # We support rank stabilized LoRA
             loftq_config = None, # And LoftQ
         )
-        
-
-    def load_dataset(self,df):
-       
         
         alpaca_prompt = """
         ### Instruction:
