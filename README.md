@@ -71,26 +71,26 @@ x.prompt_engineering="""
 ### คำตอบ:
 กรุณาให้คำตอบที่แม่นยำและครอบคลุมทุกแง่มุมของคำถามที่ผู้ใช้ถาม โดยใช้ข้อมูลที่ให้ไว้ด้านบน โดยตอบแค่ที่ถามเท่านั้น
 """
-    x.create({"text":["คุณคือผู้ช่วย"],
+x.create({"text":["คุณคือผู้ช่วย"],
                "date":["55"]})
     
-    print(x.query("คุณคือ"))
-    print(x.get_data())
+print(x.query("คุณคือ"))
+print(x.get_data())
 
-    dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
-    print(pd.DataFrame(dict_list))
-    print(x.create({
+dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
+print(pd.DataFrame(dict_list))
+print(x.create({
          "id":[1250834420,3771826426],
          "text":["คุณคือผู้ช่วย ai"],
          "last_update":["01"],
          }))
 
-    print(x.update({
+print(x.update({
          "id":[1250834420,3771826426],
           "text":["คุณคือผู้ช่วย ai"],
           "last_update":[,"01"],
           }))
-    dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
-    print(pd.DataFrame(dict_list))
+dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
+print(pd.DataFrame(dict_list))
 
 ```
