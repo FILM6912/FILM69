@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="film69",
-    version="0.4.1",
+    version="0.4.2",
     description="",  # Add your package's description here
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
@@ -44,7 +44,8 @@ setup(
             "pandas",
             "openpyxl",
             "triton",
-            "unsloth @ git+https://github.com/unslothai/unsloth"
+            "unsloth @ git+https://github.com/unslothai/unsloth",
+            "chromadb"
         ],
         "rag": [
             "pymilvus",
@@ -53,7 +54,8 @@ setup(
             "sentence-transformers",
             "numpy",
             "pandas",
-            "openpyxl"
+            "openpyxl",
+            "chromadb"
         ],
     },
     python_requires=">=3.7",
