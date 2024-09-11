@@ -23,7 +23,16 @@ class FastLLM:
         )
         
 
-    def load_dataset(self,df):
+    def load_dataset(self,df,prompt_format = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+
+### Instruction:
+{}
+
+### Input:
+{}
+
+### Response:
+{}"""):
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -38,24 +47,15 @@ class FastLLM:
             use_rslora = False,  # We support rank stabilized LoRA
             loftq_config = None, # And LoftQ
         )
-        
-        alpaca_prompt = """
-        ### Instruction:
-        {}
-
-        ### Response:
-        {}"""
 
         EOS_TOKEN = self.tokenizer.eos_token # Must add EOS_TOKEN
-        def formatting_prompts_func(examples):
-            instructions = examples["instruction"]
-            outputs      = examples["output"]
+        def formatting_prompts_func(data_in):
+            data = [data_in[i] for i in list(data_in.keys())]
             texts = []
-            for instruction, output in zip(instructions, outputs):
-                text = alpaca_prompt.format(instruction, output) + EOS_TOKEN
+            for data_tuple in zip(*data):
+                text = prompt_format.format(*data_tuple) + EOS_TOKEN
                 texts.append(text)
             return { "text" : texts, }
-        pass
 
         dataset = datasets.Dataset.from_pandas(df)
         self.dataset=dataset.map(formatting_prompts_func, batched = True,)
