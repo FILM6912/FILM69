@@ -79,7 +79,6 @@ class FastLLM:
                 learning_rate = learning_rate,
                 fp16 = not is_bfloat16_supported(),
                 bf16 = is_bfloat16_supported(),
-                logging_steps = 1,
                 optim = "adamw_8bit",
                 weight_decay = 0.01,
                 lr_scheduler_type = "linear",
