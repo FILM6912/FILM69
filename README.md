@@ -50,6 +50,20 @@ for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
 
+#### VectorDB
+```python
+from film69.ml.vectordb import VectorDB
+db = VectorDB()
+db.add_or_update(
+    documents=["สวัสดี","ไปไหน"],
+    ids=["doc1","doc2"],
+    metadatas=[{"da":"ทักทาย","ff":"hi"},{"da":"คำถาม","ff":"question"}],
+)
+db.query(query_texts=["Where are you going?"])
+db.get()
+db.delete(["doc1","doc2"])
+```
+
 #### RAG+PromptEngineering
 ```python
 from film69.ml.llm_rag import LlmRag_PromptEngineering
