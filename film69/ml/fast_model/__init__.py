@@ -180,10 +180,10 @@ class FastLLM:
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method)
 
-    def export_to_GGUF_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token=""):
+    def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token=""):
         self.model.push_to_hub_gguf(
         model_name, 
         self.tokenizer,
         quantization_method = quantization_method,
-        token = token, # Get a token at https://huggingface.co/settings/tokens
+        token = token,
     )
