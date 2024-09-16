@@ -12,6 +12,34 @@ from unsloth import is_bfloat16_supported
 class FastLLM:
     def __init__(self):
         self.history = []
+        self.quantization_method = \
+{
+    "not_quantized"  : "Recommended. Fast conversion. Slow inference, big files.",
+    "fast_quantized" : "Recommended. Fast conversion. OK inference, OK file size.",
+    "quantized"      : "Recommended. Slow conversion. Fast inference, small files.",
+    "f32"     : "Not recommended. Retains 100% accuracy, but super slow and memory hungry.",
+    "f16"     : "Fastest conversion + retains 100% accuracy. Slow and memory hungry.",
+    "q8_0"    : "Fast conversion. High resource use, but generally acceptable.",
+    "q4_k_m"  : "Recommended. Uses Q6_K for half of the attention.wv and feed_forward.w2 tensors, else Q4_K",
+    "q5_k_m"  : "Recommended. Uses Q6_K for half of the attention.wv and feed_forward.w2 tensors, else Q5_K",
+    "q2_k"    : "Uses Q4_K for the attention.vw and feed_forward.w2 tensors, Q2_K for the other tensors.",
+    "q3_k_l"  : "Uses Q5_K for the attention.wv, attention.wo, and feed_forward.w2 tensors, else Q3_K",
+    "q3_k_m"  : "Uses Q4_K for the attention.wv, attention.wo, and feed_forward.w2 tensors, else Q3_K",
+    "q3_k_s"  : "Uses Q3_K for all tensors",
+    "q4_0"    : "Original quant method, 4-bit.",
+    "q4_1"    : "Higher accuracy than q4_0 but not as high as q5_0. However has quicker inference than q5 models.",
+    "q4_k_s"  : "Uses Q4_K for all tensors",
+    "q4_k"    : "alias for q4_k_m",
+    "q5_k"    : "alias for q5_k_m",
+    "q5_0"    : "Higher accuracy, higher resource usage and slower inference.",
+    "q5_1"    : "Even higher accuracy, resource usage and slower inference.",
+    "q5_k_s"  : "Uses Q5_K for all tensors",
+    "q6_k"    : "Uses Q8_K for all tensors",
+    "iq2_xxs" : "2.06 bpw quantization",
+    "iq2_xs"  : "2.31 bpw quantization",
+    "iq3_xxs" : "3.06 bpw quantization",
+    "q3_k_xs" : "3-bit extra small quantization",
+}
 
     def load_model(self,model_name,dtype=None,load_in_4bit=True,**kwargs):  
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
@@ -104,7 +132,7 @@ class FastLLM:
     def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
-        self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True)
+        self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         input_ids = self.tokenizer.apply_chat_template(self.history if history_save else [{"role": "user","content": text}],add_generation_prompt=True,return_tensors="pt").to(self.model.device)
         terminators = [self.tokenizer.eos_token_id,self.tokenizer.convert_tokens_to_ids("<|eot_id|>")]
         if stream==True:
@@ -147,5 +175,15 @@ class FastLLM:
 
             if history_save:self.history.append({"role": "system","content": text_out})
             return text_out
+        
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"]):
+        FastLanguageModel.for_inference(self.model)
+        self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method)
 
-    
+    def export_to_GGUF_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token=""):
+        self.model.push_to_hub_gguf(
+        model_name, 
+        self.tokenizer,
+        quantization_method = quantization_method,
+        token = token, # Get a token at https://huggingface.co/settings/tokens
+    )
