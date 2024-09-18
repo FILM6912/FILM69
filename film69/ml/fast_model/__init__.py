@@ -183,7 +183,7 @@ class FastLLM:
                 shutil.move(str(file_path), str(new_file_path))
                 print(f'saved {new_file_path}')
 
-        if save_original_model:
+        if not save_original_model:
             for item in os.listdir(model_name):
                 item_path = os.path.join(model_name, item)
                 if os.path.isfile(item_path):os.remove(item_path)
