@@ -8,6 +8,8 @@ from transformers import TrainingArguments,TextIteratorStreamer
 import torch
 from threading import Thread
 from unsloth import is_bfloat16_supported
+from pathlib import Path
+import shutil,os
 
 class FastLLM:
     def __init__(self):
@@ -176,9 +178,24 @@ class FastLLM:
             if history_save:self.history.append({"role": "system","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"]):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=True):
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method)
+        source_directory = Path(model_name)
+        gguf_directory = source_directory / 'GGUF'
+
+        gguf_directory.mkdir(exist_ok=True)
+        for file_path in source_directory.rglob('*unsloth*'):
+            if file_path.is_file():
+                new_file_name = file_path.name.replace('unsloth', model_name)
+                new_file_path = gguf_directory / new_file_name
+                shutil.move(str(file_path), str(new_file_path))
+                print(f'saved {new_file_path}')
+                
+        if save_original_model:
+            for item in os.listdir(model_name):
+                item_path = os.path.join(model_name, item)
+                if os.path.isfile(item_path):os.remove(item_path)
 
     def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token=""):
         self.model.push_to_hub_gguf(

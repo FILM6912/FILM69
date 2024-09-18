@@ -24,10 +24,12 @@ class LlmRag_PromptEngineering:
             )
         if self.local==True:self.model=LLMModel(model)
         else:
-            if api_key!=None:
+            if type(api_key)==str:
                 self.client_api = OpenAI(
                 api_key=api_key,
                 base_url="https://api.opentyphoon.ai/v1",)
+            else:
+                self.client_api=api_key
             self.model=model
         self.prompt_engineering="""
 คุณกำลังเป็นผู้ช่วย AI ที่มีความเชี่ยวชาญในการตอบคำถามเกี่ยวกับข้อมูล โดยข้อมูลที่คุณจะใช้ในการตอบคำถามประกอบไปด้วย:
