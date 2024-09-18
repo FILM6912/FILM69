@@ -51,18 +51,9 @@ class FastLLM:
             **kwargs
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
-        
 
-    def load_dataset(self,df,prompt_format = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
+    def load_dataset(self,df,prompt_format = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n"""):
 
-### Instruction:
-{}
-
-### Input:
-{}
-
-### Response:
-{}"""):
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -178,7 +169,7 @@ class FastLLM:
             if history_save:self.history.append({"role": "system","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=True):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=False):
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method)
         source_directory = Path(model_name)
@@ -191,7 +182,7 @@ class FastLLM:
                 new_file_path = gguf_directory / new_file_name
                 shutil.move(str(file_path), str(new_file_path))
                 print(f'saved {new_file_path}')
-                
+
         if save_original_model:
             for item in os.listdir(model_name):
                 item_path = os.path.join(model_name, item)
