@@ -59,6 +59,6 @@ class Llama():
                     yield output["choices"][0]["text"] if not show_all else output
             return inner()
         else:
-            out=self.llm(text,max_tokens=max_tokens)
+            out=self.llm(text,max_tokens=max_tokens,**kwargs)
             return out["choices"][0]["text"] if not show_all else out
         
