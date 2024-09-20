@@ -3,7 +3,7 @@ from llama_cpp import Llama as Llama_cpp
 class Llama():
     def __init__(self):
         self.history=[]
-        self.chat_templet_model={
+        self.chat_template_model={
             "Llama3":{
                 "before_system":"<|start_header_id|>system<|end_header_id|>\n\n",
                 "after_system":"<|eot_id|>",
@@ -32,15 +32,15 @@ class Llama():
             **kwargs
         )
     
-    def chat_templet(self,message):
+    def chat_template(self,message):
         
-        if self.chat_format in self.chat_templet_model.keys():
-            before_system=self.chat_templet_model[self.chat_format]["before_system"]
-            after_system=self.chat_templet_model[self.chat_format]["after_system"]
-            before_user=self.chat_templet_model[self.chat_format]["before_user"]
-            after_user=self.chat_templet_model[self.chat_format]["after_user"]
-            before_assistant=self.chat_templet_model[self.chat_format]["before_assistant"]
-            after_assistant=self.chat_templet_model[self.chat_format]["after_assistant"]
+        if self.chat_format in self.chat_template_model.keys():
+            before_system=self.chat_template_model[self.chat_format]["before_system"]
+            after_system=self.chat_template_model[self.chat_format]["after_system"]
+            before_user=self.chat_template_model[self.chat_format]["before_user"]
+            after_user=self.chat_template_model[self.chat_format]["after_user"]
+            before_assistant=self.chat_template_model[self.chat_format]["before_assistant"]
+            after_assistant=self.chat_template_model[self.chat_format]["after_assistant"]
             message_format=""
             for i in message:
                 if i["role"]=="system":message_format+=before_system+i["content"]+after_system
@@ -51,8 +51,9 @@ class Llama():
             
         else:return ValueError(f"Chat template {self.chat_format} not found.")
     
-    def generate(self,message:list[dict], stream=False,max_tokens=512,show_all=False,**kwargs):
-        text=self.chat_templet(message)
+    def generate(self,message, stream=False,max_tokens=512,show_all=False,apply_chat_template=True,**kwargs):
+        if apply_chat_template:text=self.chat_template(message)
+        else:text=message
         if stream == True:
             def inner():
                 for output in self.llm(text, stream=True,max_tokens=max_tokens,**kwargs):
