@@ -52,7 +52,7 @@ class FastLLM:
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
 
-    def load_dataset(self,df,prompt_format = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n""",add_eos=False):
+    def load_dataset(self,df,prompt_format = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n"""):
 
         self.model = FastLanguageModel.get_peft_model(
             self.model,
@@ -74,8 +74,7 @@ class FastLLM:
             data = [data_in[i] for i in list(data_in.keys())]
             texts = []
             for data_tuple in zip(*data):
-                if add_eos:text = prompt_format.format(*data_tuple) + EOS_TOKEN
-                else:text = prompt_format.format(*data_tuple)
+                text = prompt_format.format(*data_tuple) + EOS_TOKEN
                 texts.append(text)
             return { "text" : texts, }
 
