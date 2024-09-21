@@ -57,8 +57,11 @@ class FastLLM:
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
 
-    def load_dataset(self,df,chat_template = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n""",add_eot=True):
+    def load_dataset(self,df,chat_template = None,add_eot=True):
 
+        if chat_template in self.chat_template.keys():
+            chat_template = self.chat_template [chat_template]
+        
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
