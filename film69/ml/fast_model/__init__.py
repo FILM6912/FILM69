@@ -43,6 +43,11 @@ class FastLLM:
     "q3_k_xs" : "3-bit extra small quantization",
 }
 
+        self.chat_template={
+            "Llama3":"<|start_header_id|>system<|end_header_id|>\n\n{}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n{}<|eot_id|>",
+            "Alpaca":"\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n" 
+        }
+
     def load_model(self,model_name,dtype=None,load_in_4bit=True,**kwargs):  
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
             model_name = model_name,
@@ -52,7 +57,7 @@ class FastLLM:
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
 
-    def load_dataset(self,df,prompt_format = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n""",add_eot=True):
+    def load_dataset(self,df,chat_template = """\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n""",add_eot=True):
 
         self.model = FastLanguageModel.get_peft_model(
             self.model,
@@ -74,8 +79,8 @@ class FastLLM:
             data = [data_in[i] for i in list(data_in.keys())]
             texts = []
             for data_tuple in zip(*data):
-                if add_eot:text = prompt_format.format(*data_tuple) + EOS_TOKEN
-                else:text = prompt_format.format(*data_tuple)
+                if add_eot:text = chat_template.format(*data_tuple) + EOS_TOKEN
+                else:text = chat_template.format(*data_tuple)
                 texts.append(text)
             return { "text" : texts, }
 
@@ -118,11 +123,10 @@ class FastLLM:
 
     def start_train(self):
         return self._trainer.train()
-    
+
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
-        
-        
+
     def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
