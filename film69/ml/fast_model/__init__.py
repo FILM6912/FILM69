@@ -91,7 +91,7 @@ class FastLLM:
         self.dataset=dataset.map(formatting_prompts_func, batched = True,)
         return self.dataset
 
-    def trainer(self,max_seq_length=1024,max_step=60,learning_rate=2e-4,output_dir = "outputs",callbacks=None**kwargs):
+    def trainer(self,max_seq_length=1024,max_step=60,learning_rate=2e-4,output_dir = "outputs",callbacks=None,**kwargs):
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.tokenizer,
