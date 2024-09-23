@@ -91,7 +91,8 @@ class FastLLM:
         self.dataset=dataset.map(formatting_prompts_func, batched = True,)
         return self.dataset
 
-    def trainer(self,max_seq_length=1024,max_step=60,learning_rate=2e-4,output_dir = "outputs",callbacks=None,**kwargs):
+    def trainer(self,max_seq_length=1024,learning_rate=2e-4,output_dir = "outputs",callbacks=None,**kwargs):
+        "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.tokenizer,
@@ -106,7 +107,7 @@ class FastLLM:
                 gradient_accumulation_steps = 4,
                 warmup_steps = 5,
                 # num_train_epochs = 1, # Set this for 1 full training run.
-                max_steps = max_step,
+
                 learning_rate = learning_rate,
                 fp16 = not is_bfloat16_supported(),
                 bf16 = is_bfloat16_supported(),
