@@ -14,7 +14,7 @@ import shutil,os
 class FastLLM:
     def __init__(self):
         self.history = []
-        self.quantization_method = {
+        self.quantization_method ={
     "not_quantized": "แนะนำ คอนเวอร์ชันรวดเร็ว แต่การอนุมานช้า ไฟล์ขนาดใหญ่",
     "fast_quantized": "แนะนำ คอนเวอร์ชันรวดเร็ว การอนุมานโอเค ขนาดไฟล์โอเค",
     "quantized": "แนะนำ คอนเวอร์ชันช้า การอนุมานรวดเร็ว ไฟล์ขนาดเล็ก",
@@ -56,11 +56,7 @@ class FastLLM:
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
 
-    def load_dataset(self,df,chat_template = None,add_eot=True):
-
-        if chat_template in self.chat_template.keys():
-            chat_template = self.chat_template [chat_template]
-        
+    def load_dataset(self,df=None,chat_template = None,add_eot=True,additional_information=False):
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -76,19 +72,24 @@ class FastLLM:
             loftq_config = None, # And LoftQ
         )
 
-        EOS_TOKEN = self.tokenizer.eos_token # Must add EOS_TOKEN
-        def formatting_prompts_func(data_in):
-            data = [data_in[i] for i in list(data_in.keys())]
-            texts = []
-            for data_tuple in zip(*data):
-                if add_eot:text = chat_template.format(*data_tuple) + EOS_TOKEN
-                else:text = chat_template.format(*data_tuple)
-                texts.append(text)
-            return { "text" : texts, }
+        if additional_information==False:
+            if chat_template in self.chat_template.keys():
+                chat_template = self.chat_template [chat_template]
+            
+            EOS_TOKEN = self.tokenizer.eos_token # Must add EOS_TOKEN
+            def formatting_prompts_func(data_in):
+                data = [data_in[i] for i in list(data_in.keys())]
+                texts = []
+                for data_tuple in zip(*data):
+                    if add_eot:text = chat_template.format(*data_tuple) + EOS_TOKEN
+                    else:text = chat_template.format(*data_tuple)
+                    texts.append(text)
+                return { "text" : texts, }
 
-        dataset = datasets.Dataset.from_pandas(df)
-        self.dataset=dataset.map(formatting_prompts_func, batched = True,)
-        return self.dataset
+            dataset = datasets.Dataset.from_pandas(df)
+            self.dataset=dataset.map(formatting_prompts_func, batched = True,)
+            return self.dataset
+        return None
 
     def trainer(self,max_seq_length=1024,learning_rate=2e-4,output_dir = "outputs",callbacks=None,**kwargs):
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
