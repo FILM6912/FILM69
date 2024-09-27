@@ -190,7 +190,8 @@ class FastLLM:
             if file_path.is_file():
                 new_file_name = file_path.name.replace('unsloth', model_name)
                 new_file_path = gguf_directory / new_file_name
-                shutil.move(str(file_path), str(new_file_path))
+                new_file_path=str(new_file_path).split("/")[-1]
+                shutil.move(str(file_path), new_file_path)
                 print(f'saved {new_file_path}')
 
         if not save_original_model:
