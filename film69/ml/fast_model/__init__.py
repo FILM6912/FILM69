@@ -124,10 +124,9 @@ class FastLLM:
         max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
         print(f"GPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
         print(f"{start_gpu_memory} GB of memory reserved.")
-        return self._trainer
 
     def start_train(self):
-        return self._trainer.train()
+        self._trainer.train()
 
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
