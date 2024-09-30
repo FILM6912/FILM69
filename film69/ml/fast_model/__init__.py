@@ -46,7 +46,45 @@ class FastLLM:
             "Llama3":"<|start_header_id|>system<|end_header_id|>\n\n{}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n{}<|eot_id|>",
             "Alpaca":"\n\n### Instruction:\n{}\n\n### Response:\n{}\n\n" 
         }
+        self.chat_template_model={
+            "Llama3":{
+                "before_system":"<|start_header_id|>system<|end_header_id|>\n\n",
+                "after_system":"<|eot_id|>",
+                "before_user":"<|start_header_id|>user<|end_header_id|>\n\n",
+                "after_user":"<|eot_id|>",
+                "before_assistant":"<|start_header_id|>assistant<|end_header_id|>\n\n",
+                "after_assistant":"<|eot_id|>"
+            },
+            "Alpaca":{
+                "before_system":"",
+                "after_system":"\n\n",
+                "before_user":"### Instruction:\n",
+                "after_user":"\n\n",
+                "before_assistant":"### Response:\n",
+                "after_assistant":"\n\n" 
+            }
+        }
+        self.chat_format="Llama3"
 
+    def apply_chat_template(self,message):
+        
+        if self.chat_format in self.chat_template_model.keys():
+            before_system=self.chat_template_model[self.chat_format]["before_system"]
+            after_system=self.chat_template_model[self.chat_format]["after_system"]
+            before_user=self.chat_template_model[self.chat_format]["before_user"]
+            after_user=self.chat_template_model[self.chat_format]["after_user"]
+            before_assistant=self.chat_template_model[self.chat_format]["before_assistant"]
+            after_assistant=self.chat_template_model[self.chat_format]["after_assistant"]
+            message_format=""
+            for i in message:
+                if i["role"]=="system":message_format+=before_system+i["content"]+after_system
+                elif i["role"]=="user":message_format+=before_user+i["content"]+after_user
+                elif i["role"]=="assistant":message_format+=before_assistant+i["content"]+after_assistant
+            if message[-1]["role"]!="assistant":message_format+=before_assistant
+            return message_format
+            
+        else:return ValueError(f"Chat template {self.chat_format} not found.")
+    
     def load_model(self,model_name,dtype=None,load_in_4bit=True,**kwargs):  
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
             model_name = model_name,
@@ -131,15 +169,31 @@ class FastLLM:
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
 
-    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True):
+    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
         self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
-        input_ids = self.tokenizer.apply_chat_template(self.history if history_save else [{"role": "user","content": text}],add_generation_prompt=True,return_tensors="pt").to(self.model.device)
+        if apply_chat_template==True :
+            input_ids = self.tokenizer.apply_chat_template(self.history if history_save else [{"role": "user","content": text}],add_generation_prompt=True,return_tensors="pt").to(self.model.device)
+        else:
+            self.chat_format=apply_chat_template
+            input_ids=self.tokenizer(self.apply_chat_template(self.history if history_save else [{"role": "user","content": text}]), return_tensors = "pt").to(self.model.device)
+        
         terminators = [self.tokenizer.eos_token_id,self.tokenizer.convert_tokens_to_ids("<|eot_id|>")]
         if stream==True:
             thread = Thread(target=self.model.generate, kwargs=
-                            {"input_ids": input_ids,
+                            {
+                            "input_ids": input_ids,
+                            "streamer": self.streamer,
+                            "max_new_tokens": max_new_tokens,
+                            "eos_token_id":terminators,
+                            "do_sample":True,
+                            "temperature":0.4,
+                            "top_p":0.9,
+                                
+                            }) if apply_chat_template==True else Thread(target=self.model.generate, kwargs=
+                            {
+                            **input_ids,
                             "streamer": self.streamer,
                             "max_new_tokens": max_new_tokens,
                             "eos_token_id":terminators,
