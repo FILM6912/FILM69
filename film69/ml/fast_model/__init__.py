@@ -169,7 +169,7 @@ class FastLLM:
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
 
-    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True):
+    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True,end=["<|eot_id|>"]):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
         self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
@@ -179,7 +179,7 @@ class FastLLM:
             self.chat_format=apply_chat_template
             input_ids=self.tokenizer(self.apply_chat_template(self.history if history_save else [{"role": "user","content": text}]), return_tensors = "pt").to(self.model.device)
         
-        terminators = [self.tokenizer.eos_token_id,self.tokenizer.convert_tokens_to_ids("<|eot_id|>")]
+        terminators = [self.tokenizer.eos_token_id]+[self.tokenizer.convert_tokens_to_ids(i) for i in end]
         if stream==True:
             thread = Thread(target=self.model.generate, kwargs=
                             {
