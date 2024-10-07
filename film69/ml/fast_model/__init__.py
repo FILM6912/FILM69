@@ -169,7 +169,7 @@ class FastLLM:
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
 
-    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True,end=["<|eot_id|>"]):
+    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True,end=["<|eot_id|>"],**kwargs):
         FastLanguageModel.for_inference(self.model)
         if history_save:self.history.append({"role":"user","content":text})
         self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
@@ -190,6 +190,7 @@ class FastLLM:
                             "do_sample":True,
                             "temperature":0.4,
                             "top_p":0.9,
+                            **kwargs
                                 
                             }) if apply_chat_template==True else Thread(target=self.model.generate, kwargs=
                             {
@@ -200,6 +201,7 @@ class FastLLM:
                             "do_sample":True,
                             "temperature":0.4,
                             "top_p":0.9,
+                            **kwargs
                                 
                             })
             thread.start()
@@ -213,9 +215,9 @@ class FastLLM:
                     if i!=1:
                         text_out+=new_text
                         if history_save:self.history[-1]={"role": "system","content": text_out}
-                        yield  new_text
+                        for te in new_text:yield  te
 
-                thread.join() 
+                thread.join()
             return inner()
         else:
             outputs = self.model.generate(
