@@ -45,7 +45,38 @@ setup(
             "openpyxl",
             "triton",
             "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
-            "chromadb"
+            "chromadb",
+            "streamlit",
+            "stqdm"
+        ],
+        
+        "LLM":[
+            "setuptools",
+            "setuptools-scm",
+            "packaging",
+            "tyro",
+            "transformers>=4.44.2",
+            "datasets",
+            "sentencepiece",
+            "tqdm",
+            "psutil",
+            "wheel",
+            "numpy",
+            "accelerate",
+            "trl",
+            "peft",
+            "protobuf",
+            "huggingface-hub",
+            "hf-transfer",
+            "bitsandbytes",
+            "xformers",
+            "ninja",
+            "sentence-transformers",
+            "openai",
+            "pandas",
+            "openpyxl",
+            "triton",
+            "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
         ],
         "rag": [
             "pymilvus",
@@ -57,6 +88,10 @@ setup(
             "openpyxl",
             "chromadb"
         ],
+        "ui":[
+            "streamlit",
+            "stqdm"
+        ]
     },
     python_requires=">=3.7",
     classifiers=[
