@@ -47,7 +47,8 @@ setup(
             "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
             "chromadb",
             "streamlit",
-            "stqdm"
+            "stqdm",
+            "ipywidgets"
         ],
         
         "LLM":[
@@ -77,6 +78,7 @@ setup(
             "openpyxl",
             "triton",
             "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
+            "ipywidgets"
         ],
         "rag": [
             "pymilvus",
@@ -90,7 +92,8 @@ setup(
         ],
         "ui":[
             "streamlit",
-            "stqdm"
+            "stqdm",
+            "ipywidgets"
         ]
     },
     python_requires=">=3.7",
