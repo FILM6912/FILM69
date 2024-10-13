@@ -1,12 +1,12 @@
 from transformers import WhisperFeatureExtractor, WhisperTokenizer, WhisperProcessor,WhisperForConditionalGeneration
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
-from peft import LoraConfig, PeftModel, LoraModel, LoraConfig, get_peft_model,prepare_model_for_int8_training
+from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_int8_training
 from datasets import load_dataset, DatasetDict,Audio
 from transformers import Seq2SeqTrainingArguments
 from transformers import Seq2SeqTrainer, TrainerCallback, TrainingArguments, TrainerState, TrainerControl
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
-import os,gc,torch,evaluate
+import os,gc,torch
 import shutil
 
 @dataclass
@@ -70,7 +70,6 @@ class Whisper:
         
     def init_train(self):
 
-        self.metric = evaluate.load("wer")
         self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=self.processor)
         self.base_model = prepare_model_for_int8_training(self.base_model)
         def make_inputs_require_grad(module, input, output):output.requires_grad_(True)
@@ -79,16 +78,12 @@ class Whisper:
         self.peft_model = get_peft_model(self.base_model, config)
         self.peft_model.print_trainable_parameters()
         
-    def compute_metrics(self,pred):
-        pred_ids = pred.predictions
-        label_ids = pred.label_ids
-        label_ids[label_ids == -100] = self.tokenizer.pad_token_id
-        pred_str = self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
-        label_str = self.tokenizer.batch_decode(label_ids, skip_special_tokens=True)
-        wer = 100 * self.metric.compute(predictions=pred_str, references=label_str)
-        return {"wer": wer}
+
+
+
+
         
-    def triner(self,output_dir="whisper-large-v3-turbo-thai",callbacks=None,**kwargs):
+    def triner(self,output_dir="outputs",callbacks=None,**kwargs):
         training_args = Seq2SeqTrainingArguments(
             output_dir=output_dir,
             remove_unused_columns=False,
@@ -101,7 +96,6 @@ class Whisper:
             train_dataset=self.dataset["train"],
             eval_dataset=self.dataset["test"] if "test" in self.dataset.column_names.keys() else None,
             data_collator=self.data_collator,
-            compute_metrics=self.compute_metrics,
             tokenizer=self.processor.feature_extractor,
             # callbacks=[SavePeftModelCallback],
             callbacks=callbacks,
@@ -119,12 +113,20 @@ class Whisper:
             del self.peft_model
             gc.collect()
             torch.cuda.empty_cache()
+            
+        if save_method == "bf64":
+            save_method = torch.float64
+        elif save_method== "bf32":
+            save_method = torch.float32
+        else:
+            save_method = torch.float16  
+        
+        
         base_model = WhisperForConditionalGeneration.from_pretrained(
             self.model_name,
-            torch_dtype=torch.float16 if save_method == "bf16" else None,
-            load_in_4bit=True if save_method == "bf4" else False,
-            load_in_8bit=True if save_method == "bf8" else False,
-        ).to("cuda")
+            torch_dtype=save_method,
+            device_map="auto",
+        )
         
         peft_model = PeftModel.from_pretrained(base_model, lora_adapter)
         merged_model = peft_model.merge_and_unload()
@@ -141,45 +143,108 @@ class Whisper:
         shutil.rmtree(lora_adapter)
     
             
+            
+def eval(trainer):
+    import numpy as np
+    from torch.utils.data import DataLoader
+    from transformers.models.whisper.english_normalizer import BasicTextNormalizer
+    import evaluate
+    from tqdm import tqdm
+    lora_adapter = "./eval-lora-adapter"
+    trainer.peft_model.save_pretrained(lora_adapter, save_adapter=True, save_config=True)
+
+    peft_model_id = lora_adapter
+    peft_config = PeftConfig.from_pretrained(peft_model_id)
+    model = WhisperForConditionalGeneration.from_pretrained(
+        peft_config.base_model_name_or_path, 
+        # load_in_8bit=True,
+        torch_dtype=torch.float16,
+        device_map="auto"
+    )
+    model = PeftModel.from_pretrained(model, peft_model_id)
+    metric = evaluate.load("wer")
+    eval_dataloader = DataLoader(trainer.dataset["test"], batch_size=8, collate_fn=trainer.data_collator)
+    forced_decoder_ids = trainer.processor.get_decoder_prompt_ids(language=language, task=task)
+    normalizer = BasicTextNormalizer()
+
+    predictions = []
+    references = []
+    normalized_predictions = []
+    normalized_references = []
+
+    model.eval()
+    for step, batch in enumerate(tqdm(eval_dataloader)):
+        with torch.cuda.amp.autocast():
+            with torch.no_grad():
+                generated_tokens = (
+                    model.generate(
+                        input_features=batch["input_features"].to("cuda"),
+                        forced_decoder_ids=forced_decoder_ids,
+                        max_new_tokens=255,
+                    )
+                    .cpu()
+                    .numpy()
+                )
+                labels = batch["labels"].cpu().numpy()
+                labels = np.where(labels != -100, labels, trainer.processor.tokenizer.pad_token_id)
+                decoded_preds = trainer.processor.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
+                decoded_labels = trainer.processor.tokenizer.batch_decode(labels, skip_special_tokens=True)
+                predictions.extend(decoded_preds)
+                references.extend(decoded_labels)
+                normalized_predictions.extend([normalizer(pred).strip() for pred in decoded_preds])
+                normalized_references.extend([normalizer(label).strip() for label in decoded_labels])
+            del generated_tokens, labels, batch
+        gc.collect()
+    wer = 100 * metric.compute(predictions=predictions, references=references)
+    normalized_wer = 100 * metric.compute(predictions=normalized_predictions, references=normalized_references)
+    eval_metrics = {"eval/wer": wer, "eval/normalized_wer": normalized_wer}
+
+    print(f"{wer=} and {normalized_wer=}")
+    print(eval_metrics)
+    shutil.rmtree(lora_adapter)
+
 if __name__ =="__main__":
     dataset_name = "mozilla-foundation/common_voice_17_0"
     language_abbr = "th"
-
     common_voice = DatasetDict()
     common_voice["train"] = load_dataset(dataset_name, language_abbr, split="train+validation", cache_dir="data")
     common_voice["test"] = load_dataset(dataset_name, language_abbr, split="test", cache_dir="data")
     print(common_voice)
     
+
     custom_train_size = 100
     custom_test_size = 20
 
     common_voice["train"] = common_voice["train"].select(range(custom_train_size))
     common_voice["test"] = common_voice["test"].select(range(custom_test_size))
-    
-    
+
     model_name_or_path = "whisper-large-v3-turbo"
     task = "transcribe"
     language = "Thai"
+    trainer=Whisper()
     
-    triner=Whisper()
-    triner.load_model(model_name_or_path,language,task)
+    trainer.load_model(model_name_or_path,language,task)
     
-    triner.load_dataset(common_voice["train"],common_voice["test"],1)
-    # triner.load_dataset(common_voice["train"],None,1)
+    trainer.load_dataset(common_voice["train"],common_voice["test"],1)
+    # trainer.load_dataset(common_voice["train"],None,1)
     
-    triner.triner(
+    trainer.triner(
         per_device_train_batch_size=8,
         gradient_accumulation_steps=1,
         learning_rate=1e-3,
         warmup_steps=50,
-        evaluation_strategy="no",
         fp16=True,
         per_device_eval_batch_size=8,
         generation_max_length=128,
-        logging_steps=10,
-        max_steps=100,
+        logging_steps=1,
+        max_steps=10,
+
     )
     
-    triner.start_train()
-    triner.save_merged(output_dir="model_merged",low_vram=False,return_vram=False)
+    trainer.start_train()
+    
+    eval(trainer)
+        
+    
+    trainer.save_merged(output_dir="model_merged",save_method="bf16")
     
