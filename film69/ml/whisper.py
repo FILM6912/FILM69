@@ -8,6 +8,7 @@ from transformers import Seq2SeqTrainer, TrainerCallback, TrainingArguments, Tra
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 import os,gc,torch
 import shutil
+import evaluate
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
@@ -69,7 +70,7 @@ class Whisper:
         self.init_train()
         
     def init_train(self):
-
+        self.metric = evaluate.load("wer")
         self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=self.processor)
         self.base_model = prepare_model_for_int8_training(self.base_model)
         def make_inputs_require_grad(module, input, output):output.requires_grad_(True)
@@ -79,7 +80,22 @@ class Whisper:
         self.peft_model.print_trainable_parameters()
         
 
+    def compute_metrics(self,pred):
+        
+        
+        pred_ids = pred.predictions
+        label_ids = pred.label_ids
 
+        # replace -100 with the pad_token_id
+        label_ids[label_ids == -100] = self.tokenizer.pad_token_id
+
+        # we do not want to group tokens when computing the metrics
+        pred_str = self.tokenizer.batch_decode(pred_ids, skip_special_tokens=True)
+        label_str = self.tokenizer.batch_decode(label_ids, skip_special_tokens=True)
+
+        wer = 100 *  self.metric.compute(predictions=pred_str, references=label_str)
+
+        return {"wer": wer}
 
 
         
@@ -98,6 +114,7 @@ class Whisper:
             data_collator=self.data_collator,
             tokenizer=self.processor.feature_extractor,
             # callbacks=[SavePeftModelCallback],
+            compute_metrics=self.compute_metrics,
             callbacks=callbacks,
         )
     
@@ -232,13 +249,23 @@ if __name__ =="__main__":
     trainer.triner(
         per_device_train_batch_size=8,
         gradient_accumulation_steps=1,
-        learning_rate=1e-3,
-        warmup_steps=50,
+        learning_rate=1e-5,
+        warmup_steps=500,
+        gradient_checkpointing=True,
         fp16=True,
+        evaluation_strategy="steps",
         per_device_eval_batch_size=8,
-        generation_max_length=128,
-        logging_steps=1,
+        predict_with_generate=True,
+        generation_max_length=225,
+    
+        # report_to=["tensorboard"],
+        metric_for_best_model="wer",
+        greater_is_better=False,
+        # push_to_hub=True,
         max_steps=10,
+        save_steps=10,
+        eval_steps=10,
+        logging_steps=1,
 
     )
     
