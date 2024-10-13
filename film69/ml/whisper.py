@@ -144,12 +144,13 @@ class Whisper:
     
             
             
-def eval(trainer):
+def eval(trainer,task = "transcribe",language = "Thai"):
     import numpy as np
     from torch.utils.data import DataLoader
     from transformers.models.whisper.english_normalizer import BasicTextNormalizer
     import evaluate
     from tqdm import tqdm
+        
     lora_adapter = "./eval-lora-adapter"
     trainer.peft_model.save_pretrained(lora_adapter, save_adapter=True, save_config=True)
 
