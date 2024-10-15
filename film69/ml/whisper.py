@@ -1,7 +1,8 @@
 from transformers import WhisperFeatureExtractor, WhisperTokenizer, WhisperProcessor,WhisperForConditionalGeneration
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union
-from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_int8_training
+from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_kbit_training
+# from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_int8_training
 from datasets import load_dataset, DatasetDict,Audio
 from transformers import Seq2SeqTrainingArguments
 from transformers import Seq2SeqTrainer, TrainerCallback, TrainingArguments, TrainerState, TrainerControl
@@ -72,7 +73,8 @@ class Whisper:
     def init_train(self):
         self.metric = evaluate.load("wer")
         self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=self.processor)
-        self.base_model = prepare_model_for_int8_training(self.base_model)
+        # self.base_model = prepare_model_for_int8_training(self.base_model)
+        self.base_model = prepare_model_for_kbit_training(self.base_model)
         def make_inputs_require_grad(module, input, output):output.requires_grad_(True)
         self.base_model.model.encoder.conv1.register_forward_hook(make_inputs_require_grad)
         config = LoraConfig(r=32, lora_alpha=64, target_modules=["q_proj", "v_proj"], lora_dropout=0.05, bias="none")
