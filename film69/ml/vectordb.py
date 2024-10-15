@@ -89,7 +89,20 @@ class VectorDB:
         
     
     
-        
+if __name__ == "__main__":
+    x=VectorDB(path="database", collection_name="data", embedding_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+    x.add_or_update(
+        documents= [
+            'This is a document about pineapple',
+            'This is a document about oranges'],
+        ids= ['id1', 'id2'],
+        metadatas= [{"x":1},{"x":2}]
+    )
+    print(x.get())
+    df=x.query(query_texts="This is a document about pineapple").apply(lambda x: f"{x:.2f}")
+    df["distance"]=df["distance"].apply(lambda x: f"{x:.2f}")
+    print(df)
+    x.delete('id1')
 
     
     
