@@ -63,7 +63,7 @@ class VectorDB:
             "distance":result["distances"][0],
         }
         if metadata_columns != None:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])[metadata_columns]],axis=1)
-        else:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])],axis=1)
+        else:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])],axis=1).drop(columns=0)
         return out if not on_dict else out.to_dict()
     
     def delete(self,
@@ -85,9 +85,7 @@ class VectorDB:
         if metadata_columns != None:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"])[metadata_columns]],axis=1)
         else:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"])],axis=1)
         return out if not on_dict else out.to_dict()
-    
         
-    
     
 if __name__ == "__main__":
     x=VectorDB(path="database", collection_name="data", embedding_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
