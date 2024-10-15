@@ -5,6 +5,7 @@ import chromadb
 import pandas as pd
 import numpy as np
 from typing import TYPE_CHECKING, Optional, Union
+import time,random
 from chromadb.api.types import (
     URI,
     CollectionMetadata,
@@ -36,15 +37,34 @@ class VectorDB:
         self.db = client.get_or_create_collection(collection_name,embedding_function=CustomEmbeddingFunction(self.embedding_model))
         print("Loaded successfully")
     
+    def generate_unique_ids(self,existing_ids, num_ids, id_length=10,time_out=60):
+        characters = '0123456789'
+        new_ids = []
+        start_time = time.time()
+        while len(new_ids) < num_ids:
+            new_id = ''.join(random.choices(characters, k=id_length))
+            if new_id not in existing_ids and new_id not in new_ids:new_ids.append(new_id)
+            if time.time() - start_time > time_out: break
+        return new_ids
+    
     def add_or_update(self, 
-        ids: OneOrMany[ID],
+        ids: OneOrMany[ID]=None,
         embeddings: Optional[Union[OneOrMany[Embedding],OneOrMany[np.ndarray],]] = None,
         metadatas: Optional[OneOrMany[Metadata]] = None,
         documents: Optional[OneOrMany[Document]] = None,
         images: Optional[OneOrMany[Image]] = None,
         uris: Optional[OneOrMany[URI]] = None,):
-        self.db.upsert(ids=ids,embeddings=embeddings,metadatas=metadatas,documents=documents,images=images,uris=uris)
-    
+        try:
+            if ids==None:
+                if embeddings != None:
+                    ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(embeddings))
+                elif documents != None:
+                    ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(documents))
+                self.db.upsert(ids=ids,embeddings=embeddings,metadatas=metadatas,documents=documents,images=images,uris=uris)
+        except Exception as e:
+            raise e
+            
+            
     def query(self,
         query_embeddings: Optional[Union[OneOrMany[Embedding],OneOrMany[np.ndarray],]] = None,
         query_texts: Optional[OneOrMany[Document]] = None,
