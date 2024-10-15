@@ -60,7 +60,7 @@ class VectorDB:
                     ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(embeddings))
                 elif documents != None:
                     ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(documents))
-                self.db.upsert(ids=ids,embeddings=embeddings,metadatas=metadatas,documents=documents,images=images,uris=uris)
+            self.db.upsert(ids=ids,embeddings=embeddings,metadatas=metadatas,documents=documents,images=images,uris=uris)
         except Exception as e:
             raise e
             
