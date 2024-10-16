@@ -64,7 +64,8 @@ class Whisper:
         self.dataset=DatasetDict()
         self.dataset["train"]=train_dataset
         if test_dataset!=None:self.dataset["test"]=test_dataset
-        self.dataset = self.dataset.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "path", "segment", "up_votes", "variant"])
+        try:self.dataset = self.dataset.remove_columns(["accent", "age", "client_id", "down_votes", "gender", "locale", "path", "segment", "up_votes", "variant"])
+        except:pass
         self.dataset_after_map=self.dataset
         self.dataset = self.dataset.cast_column("audio", Audio(sampling_rate=16000))
         self.dataset = self.dataset.map(self.prepare_dataset, remove_columns=self.dataset.column_names["train"], num_proc=num_proc)
