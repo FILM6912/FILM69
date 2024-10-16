@@ -48,7 +48,9 @@ setup(
             "chromadb",
             "streamlit",
             "stqdm",
-            "ipywidgets"
+            "ipywidgets",
+            "evaluate",
+            "llama-cpp-python"
         ],
         
         "LLM":[
