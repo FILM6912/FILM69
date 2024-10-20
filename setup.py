@@ -50,7 +50,8 @@ setup(
             "stqdm",
             "ipywidgets",
             "evaluate",
-            "llama-cpp-python"
+            "llama-cpp-python",
+            "jiwer"
         ],
         
         "LLM":[
