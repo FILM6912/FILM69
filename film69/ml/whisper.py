@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_kbit_training
 # from peft import LoraConfig, PeftModel, PeftConfig, LoraModel, LoraConfig, get_peft_model,prepare_model_for_int8_training
 from datasets import load_dataset, DatasetDict,Audio
-from transformers import Seq2SeqTrainingArguments
+from transformers import Seq2SeqTrainingArguments,pipeline
 from transformers import Seq2SeqTrainer, TrainerCallback, TrainingArguments, TrainerState, TrainerControl
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 import os,gc,torch
@@ -53,12 +53,25 @@ class Whisper:
         batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
         return batch
     
-    def load_model(self,model_name,language = "Thai",task = "transcribe",**kwargs):
+    def load_model(self,model_name,language = "Thai",task = "transcribe",load_in_4bit=False,max_new_tokens=128,**kwargs):
         self.model_name=model_name
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
         self.tokenizer = WhisperTokenizer.from_pretrained(model_name, language=language, task=task)
         self.processor = WhisperProcessor.from_pretrained(model_name, language=language, task=task)
-        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=True, device_map="auto",**kwargs)
+        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map="auto",**kwargs)
+        
+        if not load_in_4bit:
+            device = "cuda:0" if torch.cuda.is_available() else "cpu"
+            torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            self.whisper = pipeline(
+                "automatic-speech-recognition",
+                model=self.base_model,
+                tokenizer=self.processor.tokenizer,
+                feature_extractor=self.processor.feature_extractor,
+                max_new_tokens=max_new_tokens,
+                torch_dtype=torch_dtype,
+                device=device,
+            )
         
     def load_dataset(self,train_dataset,test_dataset=None,num_proc=1):
         self.dataset=DatasetDict()
@@ -161,6 +174,9 @@ class Whisper:
             gc.collect()
             torch.cuda.empty_cache()
         shutil.rmtree(lora_adapter)
+        
+    def predict(self,audio,chunk_length_s=30,stride_length_s=5,batch_size=8,**kwargs):
+        return self.whisper(audio,chunk_length_s=chunk_length_s,stride_length_s=stride_length_s,batch_size=batch_size,**kwargs)
     
             
             
