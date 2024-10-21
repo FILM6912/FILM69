@@ -6,6 +6,11 @@ pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[all]
 ```sh
 pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
 ```
+```sh
+pip install git+https://github.com/watcharaphon6912/film69.git@v0.4.5#egg=film69[all]
+```
+
+
 
 ### example
 #### FastLLM
