@@ -53,7 +53,7 @@ class ThingsBoard:
         df=pd.DataFrame(formatted_data)
         df["ts"]=df["ts"].apply(lambda value:datetime.fromtimestamp(value/1000))
         df['ts'] = pd.to_datetime(df['ts'], dayfirst=True)
-        return df.sort_values("ts")
+        return df.sort_values("ts").reset_index().drop(columns="index")
 
       else:return f"Error{response.status_code}"
 
