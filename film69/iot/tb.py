@@ -17,7 +17,7 @@ class ThingsBoard:
       self.token=json.loads(response.content.decode())["token"]
     else:raise ValueError("response code",response.status_code)
     
-  def send_data(self,telemetry = {"PM": 0},device_ID="426611d0-cefc-11ee-80a4-f328bf07d675"):
+  def send_data(self,telemetry = {"PM": 0},device_ID=""):
       
       url = f"https://{self.host}:443/api/plugins/telemetry/DEVICE/{device_ID}/timeseries/ANY?scope=ANY"
 
@@ -53,7 +53,7 @@ class ThingsBoard:
         df=pd.DataFrame(formatted_data)
         df["ts"]=df["ts"].apply(lambda value:datetime.fromtimestamp(value/1000))
         df['ts'] = pd.to_datetime(df['ts'], dayfirst=True)
-        return df.sort_values("ts").reset_index().drop(columns="index")
+        return df.sort_values("ts").reset_index().drop(columns="index")[["ts"]+para]
 
       else:return f"Error{response.status_code}"
 
