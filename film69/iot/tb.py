@@ -78,6 +78,6 @@ if __name__ == "__main__":
   x=tb.get_data(["Humidity","Soil Moisture_1","Soil Moisture_2",
           "Soil Moisture_3","Soil Moisture_4",
           "Soil Teamperature_1","Soil Teamperature_2"
-          ],startTS=startTS,endTS=endTS,device_ID="")
+          ],startTS=startTS,endTS=endTS,device_ID="",time='2min')
 
   print(x)
