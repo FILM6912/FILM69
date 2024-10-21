@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="film69",
-    version="0.4.3",
+    version="0.4.4",
     description="",  # Add your package's description here
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
