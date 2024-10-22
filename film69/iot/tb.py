@@ -62,9 +62,11 @@ class ThingsBoard:
         if time!=None:
           df.set_index('ts', inplace=True)
           df=df.resample(time).nearest()
-          
-          return df.reset_index()
-        else:return df
+          df= df.reset_index()
+        
+        df=df.set_index("ts")
+        df = df.apply(pd.to_numeric)
+        return df.reset_index()
       else:return f"Error{response.status_code}"
 
 if __name__ == "__main__":
