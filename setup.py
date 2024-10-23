@@ -44,7 +44,7 @@ setup(
             "pandas",
             "openpyxl",
             "triton",
-            "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
+            "unsloth @ git+https://github.com/unslothai/unsloth.git",
             "chromadb",
             "streamlit",
             "stqdm",
