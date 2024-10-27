@@ -42,7 +42,7 @@ UI=[
 SPEECH=[
     "datasets>=2.6.1",
     "librosa",
-    "evaluate>=0.30",
+    "evaluate==0.4.3",
     "jiwer",
 ]
 IOT=["minimalmodbus"]
