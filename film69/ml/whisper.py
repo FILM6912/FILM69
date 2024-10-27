@@ -8,8 +8,9 @@ from transformers import Seq2SeqTrainingArguments,pipeline
 from transformers import Seq2SeqTrainer, TrainerCallback, TrainingArguments, TrainerState, TrainerControl
 from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 import os,gc,torch
-import shutil
+import shutil,warnings
 import evaluate
+warnings.simplefilter("ignore", UserWarning)
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
