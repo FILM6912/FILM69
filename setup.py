@@ -1,109 +1,69 @@
 from setuptools import setup, find_packages
 
+# Common packages used across multiple extras
+common_packages = [
+    "setuptools",
+    "transformers>=4.44.2",
+    "numpy",
+    "pandas",
+    "openpyxl",
+    "openai",
+    "sentence-transformers",
+    "ipywidgets",
+]
+
+LLM=[
+    "datasets",
+    "sentencepiece",
+    "tqdm",
+    "psutil",
+    "accelerate",
+    "trl",
+    "peft",
+    "huggingface-hub",
+    "bitsandbytes",
+    "xformers",
+    "ninja",
+    "triton",
+    "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
+]
+RAG=[
+    "pymilvus",
+    "chromadb",
+]
+
+UI=[
+    "streamlit",
+    "stqdm",
+    "ipywidgets",
+    "gradio"
+]
+
+SPEECH=[
+    "datasets>=2.6.1",
+    "librosa",
+    "evaluate>=0.30",
+    "jiwer",
+]
+IOT=["minimalmodbus"]
+
 setup(
     name="film69",
     version="0.4.5",
-    description="",  # Add your package's description here
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
     url="https://github.com/watcharaphon6912",
     packages=find_packages(),
-    install_requires=[
-        # List base dependencies here if needed
-        # "numpy",
-    ],
-    extras_require={
-        "all": [
-            "setuptools",
-            "setuptools-scm",
-            "packaging",
-            "tyro",
-            "transformers>=4.44.2",
-            "datasets",
-            "sentencepiece",
-            "tqdm",
-            "psutil",
-            "wheel",
-            "numpy",
-            "accelerate",
-            "trl",
-            "peft",
-            "protobuf",
-            "huggingface-hub",
-            "hf-transfer",
-            "bitsandbytes",
-            "xformers",
-            "ninja",
-            "minimalmodbus",
-            "sentence-transformers",
-            "llama-index-vector-stores-milvus",
-            "llama-index",
-            "llama-index-embeddings-huggingface",
-            "pymilvus",
-            "openai",
-            "pandas",
-            "openpyxl",
-            "triton",
-            "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
-            "chromadb",
-            "streamlit",
-            "stqdm",
-            "ipywidgets",
-            "evaluate",
-            "llama-cpp-python",
-            "jiwer"
-        ],
-        
-        "LLM":[
-            "setuptools",
-            "setuptools-scm",
-            "packaging",
-            "tyro",
-            "transformers>=4.44.2",
-            "datasets",
-            "sentencepiece",
-            "tqdm",
-            "psutil",
-            "wheel",
-            "numpy",
-            "accelerate",
-            "trl",
-            "peft",
-            "protobuf",
-            "huggingface-hub",
-            "hf-transfer",
-            "bitsandbytes",
-            "xformers",
-            "ninja",
-            "sentence-transformers",
-            "openai",
-            "pandas",
-            "openpyxl",
-            "triton",
-            "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
-            "ipywidgets"
-        ],
-        "rag": [
-            "pymilvus",
-            "openai",
-            "transformers>=4.44.2",
-            "sentence-transformers",
-            "numpy",
-            "pandas",
-            "openpyxl",
-            "chromadb"
-        ],
-        "ui":[
-            "streamlit",
-            "stqdm",
-            "ipywidgets"
-        ]
-    },
     python_requires=">=3.7",
+    extras_require={
+        "LLM": common_packages + LLM,
+        "rag": common_packages + RAG,
+        "speech": common_packages + SPEECH,
+        "ui": UI,
+        "iot":IOT,
+        "all": common_packages + LLM + RAG + UI + SPEECH
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
     ],
-    setup_requires=["setuptools", "wheel"]
 )
