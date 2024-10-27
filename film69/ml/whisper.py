@@ -53,15 +53,14 @@ class Whisper:
         batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
         return batch
     
-    def load_model(self,model_name,language = "Thai",task = "transcribe",load_in_4bit=False,max_new_tokens=128,**kwargs):
+    def load_model(self,model_name,language = "Thai",task = "transcribe",load_in_4bit=False,max_new_tokens=128,device_map="auto",**kwargs):
         self.model_name=model_name
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
         self.tokenizer = WhisperTokenizer.from_pretrained(model_name, language=language, task=task)
         self.processor = WhisperProcessor.from_pretrained(model_name, language=language, task=task)
-        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map="auto",**kwargs)
+        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map=device_map,**kwargs)
         
         if not load_in_4bit:
-            device = "cuda:0" if torch.cuda.is_available() else "cpu"
             torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             self.whisper = pipeline(
                 "automatic-speech-recognition",
@@ -70,7 +69,7 @@ class Whisper:
                 feature_extractor=self.processor.feature_extractor,
                 max_new_tokens=max_new_tokens,
                 torch_dtype=torch_dtype,
-                device=device,
+                # device=device_map,
             )
         
     def load_dataset(self,train_dataset,test_dataset=None,num_proc=1):
