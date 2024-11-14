@@ -61,7 +61,7 @@ setup(
         "speech": common_packages + SPEECH,
         "ui": UI,
         "iot":IOT,
-        "all": common_packages + LLM + RAG + UI + SPEECH,
+        "all": common_packages + LLM + RAG + UI + SPEECH+IOT,
         "all+llama-cpp": common_packages + LLM + RAG + UI + SPEECH + ["llama-cpp-python==0.3.1"]
     },
     classifiers=[
