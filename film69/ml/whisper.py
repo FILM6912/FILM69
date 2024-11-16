@@ -10,6 +10,8 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 import os,gc,torch
 import shutil,warnings
 import evaluate
+# warnings.simplefilter("ignore", UserWarning)
+# warnings.simplefilter("ignore", FutureWarning)
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
@@ -177,7 +179,11 @@ class Whisper:
             torch.cuda.empty_cache()
         shutil.rmtree(lora_adapter)
         
-    def predict(self,audio,chunk_length_s=30,stride_length_s=5,batch_size=8,**kwargs):
+    def predict(self,audio,language = None,task = None or "transcribe" or "translate",chunk_length_s=30,stride_length_s=5,batch_size=8,**kwargs):
+
+        if language !=None:self.base_model.generation_config.language = language
+        if task!=None: self.base_model.generation_config.task = task
+
         return self.whisper(audio,chunk_length_s=chunk_length_s,stride_length_s=stride_length_s,batch_size=batch_size,**kwargs)
     
             
