@@ -10,8 +10,6 @@ from transformers.trainer_utils import PREFIX_CHECKPOINT_DIR
 import os,gc,torch
 import shutil,warnings
 import evaluate
-warnings.simplefilter("ignore", UserWarning)
-warnings.simplefilter("ignore", FutureWarning)
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
@@ -55,13 +53,16 @@ class Whisper:
         batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
         return batch
     
-    def load_model(self,model_name,language = "Thai",task = "transcribe",load_in_4bit=False,max_new_tokens=128,device_map="auto",**kwargs):
+    def load_model(self,model_name,language = "thai",task = "transcribe" or "translate",load_in_4bit=False,max_new_tokens=128,device_map="auto",**kwargs):
         self.model_name=model_name
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
-        self.tokenizer = WhisperTokenizer.from_pretrained(model_name, language=language, task=task)
-        self.processor = WhisperProcessor.from_pretrained(model_name, language=language, task=task)
+        self.tokenizer = WhisperTokenizer.from_pretrained(model_name)
+        self.processor = WhisperProcessor.from_pretrained(model_name)
         self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map=device_map,**kwargs)
-        
+        self.base_model.generation_config.language = language
+        self.base_model.generation_config.task =task
+        self.base_model.generation_config.forced_decoder_ids = None
+
         if not load_in_4bit:
             torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
             self.whisper = pipeline(
