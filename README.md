@@ -1,7 +1,7 @@
 # FILM69
 ### install
 ```sh
-pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[all]
+pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[all] --force-reinstall
 ```
 ```sh
 pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
