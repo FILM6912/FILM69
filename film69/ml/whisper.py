@@ -55,9 +55,10 @@ class Whisper:
         batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
         return batch
     
-    def load_model(self,model_name,language = "thai",task = "transcribe" or "translate",load_in_4bit=False,device_map="auto",**kwargs):
+    def load_model(self,model_name,language = "thai",task = "transcribe" or "translate",load_in_4bit=False,device_map="auto",is_lora=False,**kwargs):
         if device_map=="auto":self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:self.device = device_map
+        self.is_lora=is_lora
         
         self.model_name=model_name
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
@@ -69,6 +70,7 @@ class Whisper:
         self.base_model.generation_config.forced_decoder_ids = None
         
     def load_dataset(self,train_dataset,test_dataset=None,num_proc=1):
+        
         self.dataset=DatasetDict()
         self.dataset["train"]=train_dataset
         if test_dataset!=None:self.dataset["test"]=test_dataset
@@ -77,11 +79,12 @@ class Whisper:
         self.dataset_after_map=self.dataset
         self.dataset = self.dataset.cast_column("audio", Audio(sampling_rate=16000))
         self.dataset = self.dataset.map(self.prepare_dataset, remove_columns=self.dataset.column_names["train"], num_proc=num_proc)
-        self.init_train()
+        if self.is_lora:self.init_train()
+        self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=self.processor)
         
     def init_train(self):
         self.metric = evaluate.load("wer")
-        self.data_collator = DataCollatorSpeechSeq2SeqWithPadding(processor=self.processor)
+        
         # self.base_model = prepare_model_for_int8_training(self.base_model)
         self.base_model = prepare_model_for_kbit_training(self.base_model)
         def make_inputs_require_grad(module, input, output):output.requires_grad_(True)
@@ -92,7 +95,6 @@ class Whisper:
         
 
     def compute_metrics(self,pred):
-        
         
         pred_ids = pred.predictions
         label_ids = pred.label_ids
@@ -108,9 +110,10 @@ class Whisper:
 
         return {"wer": wer}
 
-
         
     def triner(self,output_dir="outputs",callbacks=None,**kwargs):
+        if self.is_lora:self.peft_model.config.use_cache=False
+        else:self.base_model.config.use_cache=False
         training_args = Seq2SeqTrainingArguments(
             output_dir=output_dir,
             remove_unused_columns=False,
@@ -119,7 +122,7 @@ class Whisper:
         )
         self._trainer = Seq2SeqTrainer(
             args=training_args,
-            model=self.peft_model,
+            model=self.peft_model if self.is_lora else self.base_model,
             train_dataset=self.dataset["train"],
             eval_dataset=self.dataset["test"] if "test" in self.dataset.column_names.keys() else None,
             data_collator=self.data_collator,
@@ -132,43 +135,53 @@ class Whisper:
     def start_train(self):
         self._trainer.train()
         
-    def save_merged(self,output_dir="model_merged",low_vram=False,return_vram=False,save_method="bf16"):
-        lora_adapter = "./lora-adapter"
-        self.peft_model.save_pretrained(lora_adapter, save_adapter=True, save_config=True)
-        if low_vram:
-            del self._trainer
-            del self.base_model
-            del self.peft_model
-            gc.collect()
-            torch.cuda.empty_cache()
+    def save_model(self,output_dir="model_merged",low_vram=False,return_vram=False,save_method="bf16"):
+        if self.is_lora:self.peft_model.config.use_cache=True
+        else:self.base_model.config.use_cache=True
+        if self.is_lora:
+            lora_adapter = "./lora-adapter"
+            self.peft_model.save_pretrained(lora_adapter, save_adapter=True, save_config=True)
+            if low_vram:
+                del self._trainer
+                del self.base_model
+                del self.peft_model
+                gc.collect()
+                torch.cuda.empty_cache()
+                
+            if save_method == "bf64":
+                save_method = torch.float64
+            elif save_method== "bf32":
+                save_method = torch.float32
+            else:
+                save_method = torch.float16  
             
-        if save_method == "bf64":
-            save_method = torch.float64
-        elif save_method== "bf32":
-            save_method = torch.float32
+            base_model = WhisperForConditionalGeneration.from_pretrained(
+                self.model_name,
+                torch_dtype=save_method,
+                device_map="auto",
+            )
+            
+            peft_model = PeftModel.from_pretrained(base_model, lora_adapter)
+            merged_model = peft_model.merge_and_unload()
+            merged_model.save_pretrained(output_dir)
+            # tokenizer.save_pretrained("./whisper-lora-merged")
+            self.processor.save_pretrained(output_dir)
+            if return_vram:
+                del base_model
+                del peft_model
+                del merged_model
+                del self.processor
+                gc.collect()
+                torch.cuda.empty_cache()
+            shutil.rmtree(lora_adapter)
         else:
-            save_method = torch.float16  
-        
-        
-        base_model = WhisperForConditionalGeneration.from_pretrained(
-            self.model_name,
-            torch_dtype=save_method,
-            device_map="auto",
-        )
-        
-        peft_model = PeftModel.from_pretrained(base_model, lora_adapter)
-        merged_model = peft_model.merge_and_unload()
-        merged_model.save_pretrained(output_dir)
-        # tokenizer.save_pretrained("./whisper-lora-merged")
-        self.processor.save_pretrained(output_dir)
-        if return_vram:
-            del base_model
-            del peft_model
-            del merged_model
-            del self.processor
-            gc.collect()
-            torch.cuda.empty_cache()
-        shutil.rmtree(lora_adapter)
+            self.base_model.save_pretrained(output_dir)
+            self.processor.save_pretrained(output_dir)
+            if return_vram:
+                del self._trainer
+                del self.base_model
+                gc.collect()
+                torch.cuda.empty_cache()
         
     def predict(self,audio,language = None,task = None or "transcribe" or "translate",chunk_length_s=30,stride_length_s=5,batch_size=8,**kwargs):
 
