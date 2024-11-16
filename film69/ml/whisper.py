@@ -55,27 +55,18 @@ class Whisper:
         batch["labels"] = self.tokenizer(batch["sentence"]).input_ids
         return batch
     
-    def load_model(self,model_name,language = "thai",task = "transcribe" or "translate",load_in_4bit=False,max_new_tokens=128,device_map="auto",**kwargs):
+    def load_model(self,model_name,language = "thai",task = "transcribe" or "translate",load_in_4bit=False,device_map="auto",**kwargs):
+        if device_map=="auto":self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:self.device = device_map
+        
         self.model_name=model_name
         self.feature_extractor = WhisperFeatureExtractor.from_pretrained(model_name)
         self.tokenizer = WhisperTokenizer.from_pretrained(model_name)
         self.processor = WhisperProcessor.from_pretrained(model_name)
-        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map=device_map,**kwargs)
+        self.base_model = WhisperForConditionalGeneration.from_pretrained(model_name, load_in_4bit=load_in_4bit, device_map=self.device,**kwargs)
         self.base_model.generation_config.language = language
         self.base_model.generation_config.task =task
         self.base_model.generation_config.forced_decoder_ids = None
-
-        if not load_in_4bit:
-            torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-            self.whisper = pipeline(
-                "automatic-speech-recognition",
-                model=self.base_model,
-                tokenizer=self.processor.tokenizer,
-                feature_extractor=self.processor.feature_extractor,
-                max_new_tokens=max_new_tokens,
-                torch_dtype=torch_dtype,
-                # device=device_map,
-            )
         
     def load_dataset(self,train_dataset,test_dataset=None,num_proc=1):
         self.dataset=DatasetDict()
@@ -184,9 +175,17 @@ class Whisper:
         if language !=None:self.base_model.generation_config.language = language
         if task!=None: self.base_model.generation_config.task = task
 
+        torch_dtype = torch.float16 if self.device=="cuda" else torch.float32
+        self.whisper = pipeline(
+                "automatic-speech-recognition",
+                model=self.base_model,
+                tokenizer=self.processor.tokenizer,
+                feature_extractor=self.processor.feature_extractor,
+                torch_dtype=torch_dtype,
+        )
+
         return self.whisper(audio,chunk_length_s=chunk_length_s,stride_length_s=stride_length_s,batch_size=batch_size,**kwargs)
     
-            
             
 def eval(trainer,task = "transcribe",language = "Thai"):
     import numpy as np
@@ -299,7 +298,6 @@ if __name__ =="__main__":
     trainer.start_train()
     
     eval(trainer)
-        
-    
+         
     trainer.save_merged(output_dir="model_merged",save_method="bf16")
     
