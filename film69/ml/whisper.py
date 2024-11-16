@@ -11,7 +11,7 @@ import os,gc,torch
 import shutil,warnings
 import evaluate
 # warnings.simplefilter("ignore", UserWarning)
-# warnings.simplefilter("ignore", FutureWarning)
+warnings.simplefilter("ignore", FutureWarning)
 
 @dataclass
 class DataCollatorSpeechSeq2SeqWithPadding:
