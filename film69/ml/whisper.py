@@ -277,7 +277,7 @@ if __name__ =="__main__":
 
     model_name_or_path = "whisper-large-v3-turbo"
     task = "transcribe"
-    language = "Thai"
+    language = "thai"
     trainer=Whisper()
     
     trainer.load_model(model_name_or_path,language,task)
@@ -312,5 +312,5 @@ if __name__ =="__main__":
     
     eval(trainer)
          
-    trainer.save_merged(output_dir="model_merged",save_method="bf16")
+    trainer.save_model(output_dir="model_merged",save_method="bf16")
     
