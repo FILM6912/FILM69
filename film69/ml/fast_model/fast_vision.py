@@ -1,13 +1,3 @@
-import builtins
-def disable():
-    global print
-    print = lambda *args, **kwargs: None
-
-def enable():
-    global print
-    print = builtins.print
-
-disable()
 import warnings,os,sys
 from unsloth import FastVisionModel
 from transformers import TrainingArguments,TextIteratorStreamer
@@ -21,7 +11,6 @@ from trl import SFTTrainer, SFTConfig
 from threading import Thread
 from PIL import Image
 from datasets import load_dataset
-enable()
 
 class DataCollator:
     __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
@@ -93,14 +82,13 @@ class FastVLLM:
         self.history_images=[]
     
     def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
-        disable()
         self.model, self.tokenizer = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
             load_in_4bit = load_in_4bit,
             **kwargs
         )
-        enable()
+    
 
     def load_dataset(self,dataset,chat_template = None,add_eot=True,additional_information=False):
         
