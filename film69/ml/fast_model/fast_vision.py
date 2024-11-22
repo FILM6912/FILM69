@@ -1,6 +1,6 @@
 from unsloth import FastVisionModel
 from transformers import TrainingArguments,TextIteratorStreamer
-import warnings
+import warnings,os,sys
 warnings.simplefilter("ignore", SyntaxWarning)
 
 from unsloth_zoo.vision_utils import process_vision_info,get_padding_tokens_ids,_get_dtype
@@ -81,6 +81,7 @@ class FastVLLM:
         self.history_images=[]
     
     def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
+    
         self.model, self.tokenizer = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
@@ -89,6 +90,7 @@ class FastVLLM:
         )
 
     def load_dataset(self,dataset,chat_template = None,add_eot=True,additional_information=False):
+        sys.stdout = open(os.devnull, 'w')
         self.model = FastVisionModel.get_peft_model(
             self.model,
             finetune_vision_layers     = True, # False if not finetuning vision layers
@@ -104,6 +106,7 @@ class FastVLLM:
             use_rslora = False,  # We support rank stabilized LoRA
             loftq_config = None, # And LoftQ
         )
+        sys.stdout = sys.__stdout__
         self.converted_dataset=dataset
 
     def trainer(self,
