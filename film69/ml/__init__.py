@@ -5,8 +5,8 @@ try:
     from .whisper import Whisper
     from .whisper import eval as whisper_eval
 except:print("Unable to import Whisper")
-try:from .fast_model import FastLLM
-except:print("Unable to import FastLLM")
+try:from .fast_model import *
+except:print("Unable to import FastModel")
 try:from .llm_rag_chromadb import LlmRagChromadb
 except: print("Unable to import LlmRagChromadb")
 try:from .llama import Llama
