@@ -9,6 +9,7 @@ from unsloth import is_bf16_supported
 from trl import SFTTrainer, SFTConfig
 from threading import Thread
 from PIL import Image
+from datasets import load_dataset
 
 class DataCollator:
     __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
@@ -124,7 +125,7 @@ class FastVLLM:
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
         FastVisionModel.for_training(self.model) 
 
-        trainer = SFTTrainer(
+        self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.tokenizer,
             # data_collator = DataCollator(model, tokenizer), # Must use!
@@ -239,3 +240,35 @@ class FastVLLM:
             if history_save:self.history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
 
             return text_out
+
+
+if __name__ == "__main__":
+    model = FastVLLM()
+    model.load_model("Llama-3.2-11B-Vision-Instruct",load_in_4bit=True)
+    dataset = load_dataset("unsloth/Radiology_mini", split = "train")
+    dataset=dataset.select(range(5))
+
+    instruction = "You are an expert radiographer. Describe accurately what you see in this image."
+
+    def convert_to_conversation(sample):
+        conversation = [
+            { "role": "user",
+            "content" : [
+                # {"type" : "text",  "text"  : "สวัสดี"},
+                {"type" : "image", "image" : sample["image"]} 
+                ]
+            },
+            { "role" : "assistant",
+            "content" : [
+                # {"type" : "text",  "text"  : "สวัสดีครับคุณ film"} ]
+                {"type" : "text",  "text"  : sample["caption"]} ]
+            },
+        ]
+        return { "messages" : conversation }
+    
+    converted_dataset = [convert_to_conversation(sample) for sample in dataset]
+
+    model.load_dataset(converted_dataset)
+    model.trainer(max_steps = 60,logging_steps=1)
+
+    model.start_train()
