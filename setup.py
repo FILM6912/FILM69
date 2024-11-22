@@ -49,12 +49,12 @@ IOT=["minimalmodbus"]
 
 setup(
     name="film69",
-    version="0.4.5",
+    version="0.4.6",
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
     url="https://github.com/watcharaphon6912",
     packages=find_packages(),
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     extras_require={
         "LLM": common_packages + LLM,
         "rag": common_packages + RAG,
