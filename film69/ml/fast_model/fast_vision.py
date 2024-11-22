@@ -1,6 +1,8 @@
+import warnings,os,sys
+sys.stdout = open(os.devnull, 'w')
 from unsloth import FastVisionModel
 from transformers import TrainingArguments,TextIteratorStreamer
-import warnings,os,sys
+
 warnings.simplefilter("ignore", SyntaxWarning)
 
 from unsloth_zoo.vision_utils import process_vision_info,get_padding_tokens_ids,_get_dtype
@@ -10,6 +12,7 @@ from trl import SFTTrainer, SFTConfig
 from threading import Thread
 from PIL import Image
 from datasets import load_dataset
+sys.stdout = sys.__stdout__
 
 class DataCollator:
     __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
