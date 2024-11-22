@@ -1,5 +1,14 @@
+import builtins
+def disable():
+    global print
+    print = lambda *args, **kwargs: None
+
+def enable():
+    global print
+    print = builtins.print
+
+disable()
 import shutil,os,sys
-sys.stdout = open(os.devnull, 'w')
 from unsloth import FastLanguageModel
 import datasets
 import pandas as pd
@@ -10,7 +19,7 @@ import torch
 from threading import Thread
 from unsloth import is_bfloat16_supported
 from pathlib import Path
-sys.stdout = sys.__stdout__
+enable()
 
 class FastLLM:
     def __init__(self):
@@ -87,7 +96,7 @@ class FastLLM:
         else:return ValueError(f"Chat template {self.chat_format} not found.")
     
     def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
-        sys.stdout = open(os.devnull, 'w') 
+        disable()
         self.model, self.tokenizer = FastLanguageModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
@@ -95,7 +104,7 @@ class FastLLM:
             **kwargs
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
-        sys.stdout = sys.__stdout__
+        enable()
 
     def load_dataset(self,df=None,chat_template = None,add_eot=True,additional_information=False):
         self.model = FastLanguageModel.get_peft_model(
