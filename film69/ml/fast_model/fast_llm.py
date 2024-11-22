@@ -1,4 +1,5 @@
-
+import shutil,os,sys
+sys.stdout = open(os.devnull, 'w')
 from unsloth import FastLanguageModel
 import datasets
 import pandas as pd
@@ -9,7 +10,7 @@ import torch
 from threading import Thread
 from unsloth import is_bfloat16_supported
 from pathlib import Path
-import shutil,os,sys
+sys.stdout = sys.__stdout__
 
 class FastLLM:
     def __init__(self):
