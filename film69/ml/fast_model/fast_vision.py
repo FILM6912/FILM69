@@ -84,16 +84,17 @@ class FastVLLM:
         self.history_images=[]
     
     def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
-    
+        sys.stdout = open(os.devnull, 'w')
         self.model, self.tokenizer = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
             load_in_4bit = load_in_4bit,
             **kwargs
         )
+        sys.stdout = sys.__stdout__
 
     def load_dataset(self,dataset,chat_template = None,add_eot=True,additional_information=False):
-        sys.stdout = open(os.devnull, 'w')
+        
         self.model = FastVisionModel.get_peft_model(
             self.model,
             finetune_vision_layers     = True, # False if not finetuning vision layers
@@ -109,7 +110,7 @@ class FastVLLM:
             use_rslora = False,  # We support rank stabilized LoRA
             loftq_config = None, # And LoftQ
         )
-        sys.stdout = sys.__stdout__
+        
         self.converted_dataset=dataset
 
     def trainer(self,
