@@ -1,14 +1,12 @@
 from .fast_llm import FastLLM
 from .fast_vision import FastVLLM
-class AutoModel:
-    def __init__(self,) -> None:
-        self.model=None
 
-    def load_model_(self,model_name,dtype=None,load_in_4bit=False,**kwargs)->FastLLM | FastVLLM:
+class AutoModel:
+    def __new__(cls, model_name: str, dtype: str = None, load_in_4bit: bool = False, **kwargs):
         try:
-            self=FastLLM()
-            self.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
+           base_class = FastLLM()
+           base_class.load_model(model_name, dtype=dtype, load_in_4bit=load_in_4bit, **kwargs)
         except:
-            self=FastVLLM()
-            self.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
-            
+            base_class = FastVLLM()
+            base_class.load_model(model_name, dtype=dtype, load_in_4bit=load_in_4bit, **kwargs)
+        return base_class
