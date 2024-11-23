@@ -1,7 +1,7 @@
 from .fast_llm import FastLLM
 from .fast_vision import FastVLLM
 
-class AutoModel:
+class FastAutoModel:
     def __new__(cls, model_name: str, dtype: str = None, load_in_4bit: bool = False, **kwargs):
         try:
            base_class = FastLLM()
