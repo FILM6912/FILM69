@@ -4,12 +4,11 @@ class AutoModel:
     def __init__(self,) -> None:
         self.model=None
 
-    def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs)->FastLLM | FastVLLM:
+    def load_model_(self,model_name,dtype=None,load_in_4bit=False,**kwargs)->FastLLM | FastVLLM:
         try:
-            model=FastLLM()
-            model.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
+            self=FastLLM()
+            self.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
         except:
-            model=FastVLLM()
-            model.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
+            self=FastVLLM()
+            self.load_model(model_name,dtype=None,load_in_4bit=False,**kwargs)
             
-        return model
