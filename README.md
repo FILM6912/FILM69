@@ -23,24 +23,29 @@ pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film6
 ```
 
 
-
 # example
 #### FastAutoModel
 ```python
 from film69.ml import FastAutoModel
+from PIL import Image
+
+image=Image.open("image,jpg")
+
 model=FastAutoModel()
 model.load_model(
     "FILM6912/Llama-3.2-11B-Vision-Instruct",
     device_map="cuda",
     load_in_4bit=True,
     )
-for i in model.generate("คุณเห็นอะไรในรูป",image,history_save=False,stream=True):
+for i in model.generate("คุณเห็นอะไรในรูป",image,stream=True):
     print(i,end="")
 
 for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 
+print(model.generate("คุณเห็นอะไรในรูป",image,max_new_tokens=200))
 print(model.generate("สวัสดี",max_new_tokens=200))
+
 
 #####################################################################################
 
