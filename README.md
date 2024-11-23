@@ -1,33 +1,94 @@
-# FILM69
-### install
+# install FILM69
+
 ```sh
-pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[all] --force-reinstall
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[all]" --force-reinstall
 ```
 ```sh
-pip install git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[LLM]"
 ```
 ```sh
-pip install git+https://github.com/watcharaphon6912/film69.git@v0.4.5#egg=film69[all]
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[rag]"
+```
+```sh
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[speech]"
+```
+```sh
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[ui]"
+```
+```sh
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[iot]"
+```
+```sh
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[all+llama-cpp]"
 ```
 
 
 
-### example
+# example
+#### FastAutoModel
+```python
+from film69.ml import FastAutoModel
+model=FastAutoModel()
+model.load_model(
+    "FILM6912/Llama-3.2-11B-Vision-Instruct",
+    device_map="cuda",
+    load_in_4bit=True,
+    )
+for i in model.generate("คุณเห็นอะไรในรูป",image,history_save=False,stream=True):
+    print(i,end="")
+
+for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
+    print(text,end="")
+
+print(model.generate("สวัสดี",max_new_tokens=200))
+
+#####################################################################################
+
+model=FastAutoModel()
+model.load_model(
+    "FILM6912/XiaoXi-TH-8B",
+    device_map="cuda",
+    load_in_4bit=True,
+    )
+for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
+    print(text,end="")
+print(model.generate("สวัสดี",max_new_tokens=200))
+
+```
+
+#### FastVLLM
+```python
+from film69.ml import FastVLLM
+model=FastVLLM()
+model.load_model(
+    "FILM6912/Llama-3.2-11B-Vision-Instruct",
+    device_map="cuda",
+    load_in_4bit=True,
+    )
+for i in model.generate("คุณเห็นอะไรในรูป",image,history_save=False,stream=True):
+    print(i,end="")
+
+for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
+    print(text,end="")
+
+print(model.generate("สวัสดี",max_new_tokens=200))
+```
+
+
 #### FastLLM
 ```python
-from film69.ml.fast_model import FastLLM
+from film69.ml import FastLLM
 model=FastLLM()
 model.load_model(
     "FILM6912/XiaoXi-TH-8B",
     device_map="cuda",
     load_in_4bit=True,
-    # load_in_8bit=True,
-    # low_cpu_mem_usage = True
     )
 for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
+
 
 #### LLM
 ```python
@@ -71,45 +132,25 @@ db.delete(["doc1","doc2"])
 
 #### RAG+PromptEngineering
 ```python
-from film69.ml.llm_rag import LlmRag_PromptEngineering
-import ast
-x=LlmRag_PromptEngineering("data.db",api_key="")
-x.prompt_engineering="""
-คุณกำลังเป็นผู้ช่วย AI ที่มีความเชี่ยวชาญในการตอบคำถามเกี่ยวกับข้อมูล โดยข้อมูลที่คุณจะใช้ในการตอบคำถามประกอบไปด้วย:
+from film69.ml.llm_rag_chromadb import LlmRagChromadb
+x=LlmRagChromadb(
+        api_key="",
+        model="typhoon-v1.5-instruct",
+        local=False
+    )
 
-เนื้อหาต่างๆ
-
-ให้คุณตอบคำถามตามข้อมูลที่ได้รับด้วยความแม่นยำสูงสุด โดยมีรายละเอียดดังนี้:
-
-### คำถาม:
-{question}
-
-### ข้อมูลที่เกี่ยวข้อง:
-{data}
-
-### คำตอบ:
-กรุณาให้คำตอบที่แม่นยำและครอบคลุมทุกแง่มุมของคำถามที่ผู้ใช้ถาม โดยใช้ข้อมูลที่ให้ไว้ด้านบน โดยตอบแค่ที่ถามเท่านั้น
-"""
-x.create({"text":["คุณคือผู้ช่วย"],
-               "date":["55"]})
+    x.add_or_update(
+        ids=['1','2'],
+        # ids=None,
+        documents=["คุณคือ","สวัสดี"],
+        metadatas=[{"text_out":"ฉันเป็น AI ที่ถูกสร้างขึ้นมาเพื่อช่วยตอบคำถาม","x":0},{"text_out":"สวัสดีครับ","x":1}]
+    )
     
-print(x.query("คุณคือ"))
-print(x.get_data())
-
-dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
-print(pd.DataFrame(dict_list))
-print(x.create({
-         "id":[1250834420,3771826426],
-         "text":["คุณคือผู้ช่วย ai"],
-         "last_update":["01"],
-         }))
-
-print(x.update({
-         "id":[1250834420,3771826426],
-          "text":["คุณคือผู้ช่วย ai"],
-          "last_update":[,"01"],
-          }))
-dict_list = [ast.literal_eval(str(item)) for item in x.get_data()]
-print(pd.DataFrame(dict_list))
+    print(x.query(query_texts="คุณคือ",n_results=10))
+    
+    print(x.get())
+    
+    for i in x.model_generate("คุณคือ",limit=1,text_out="text_out",where={"x":0},stream=True):
+        print(i,end="")
 
 ```
