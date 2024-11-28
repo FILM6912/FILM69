@@ -170,8 +170,21 @@ class FastLLM:
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
 
-    def generate(self,text:str,max_new_tokens:int=512,stream:bool=False,history_save:bool=True,apply_chat_template=True,end=["<|eot_id|>"],**kwargs):
+    def generate(self,
+        text:str,
+        max_new_tokens:int=512,
+        stream:bool=False,
+        history_save:bool=True,
+        temperature=0.4,
+        top_p=0.9,
+        end:list[str]=None,
+        apply_chat_template=True,
+        **kwargs):
         FastLanguageModel.for_inference(self.model)
+        
+        if end==None:
+            end=[self.tokenizer.eos_token]
+        
         if history_save:self.history.append({"role":"user","content":text})
         self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=False, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         if apply_chat_template==True :
@@ -189,8 +202,8 @@ class FastLLM:
                             "max_new_tokens": max_new_tokens,
                             "eos_token_id":terminators,
                             "do_sample":True,
-                            "temperature":0.4,
-                            "top_p":0.9,
+                            "temperature":temperature,
+                            "top_p":top_p,
                             **kwargs
                                 
                             }) if apply_chat_template==True else Thread(target=self.model.generate, kwargs=
@@ -200,8 +213,8 @@ class FastLLM:
                             "max_new_tokens": max_new_tokens,
                             "eos_token_id":terminators,
                             "do_sample":True,
-                            "temperature":0.4,
-                            "top_p":0.9,
+                            "temperature":temperature,
+                            "top_p":top_p,
                             **kwargs
                                 
                             })
