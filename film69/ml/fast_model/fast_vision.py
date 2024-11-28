@@ -176,8 +176,11 @@ class FastVLLM:
         apply_chat_template=True,
         temperature=0.4,
         top_p=0.9,
-        end=["<|eot_id|>"],
+        end:list[str]=None,
         **kwargs):
+
+        if end==None:
+            end=[self.tokenizer.tokenizer.eos_token]
 
         FastVisionModel.for_inference(self.model)
         if images==None:messages = {"role": "user", "content": [{"type": "text", "text": text}]}
