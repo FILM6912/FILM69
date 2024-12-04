@@ -19,7 +19,7 @@ pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film6
 pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[iot]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[all+llama-cpp]"
+pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film69[all_llama-cpp]"
 ```
 
 
