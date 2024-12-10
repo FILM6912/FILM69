@@ -132,7 +132,7 @@ db = VectorDB()
 db.add_or_update(
     documents=["สวัสดี","ไปไหน"],
     ids=["doc1","doc2"],
-    metadatas=[{"da":"ทักทาย","ff":"hi"},{"da":"คำถาม","ff":"question"}],
+    metadatas=[{"type":"ทักทาย"},{"type":"คำถาม"}],
 )
 db.query(query_texts=["Where are you going?"])
 db.get()
