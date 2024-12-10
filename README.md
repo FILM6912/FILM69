@@ -135,7 +135,7 @@ db.get()
 db.delete(["doc1","doc2"])
 ```
 
-#### RAG+PromptEngineering
+#### RAG Chromadb
 ```python
 from film69.ml.llm_rag_chromadb import LlmRagChromadb
 x=LlmRagChromadb(
