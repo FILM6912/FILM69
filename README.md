@@ -29,7 +29,7 @@ pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film6
 from film69.ml import FastAutoModel
 from PIL import Image
 
-image=Image.open("image,jpg")
+image=Image.open("image.jpg")
 
 model=FastAutoModel()
 model.load_model(
@@ -64,6 +64,10 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 #### FastVLLM
 ```python
 from film69.ml import FastVLLM
+from PIL import Image
+
+image=Image.open("image.jpg")
+
 model=FastVLLM()
 model.load_model(
     "FILM6912/Llama-3.2-11B-Vision-Instruct",
