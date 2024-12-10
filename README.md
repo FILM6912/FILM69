@@ -51,7 +51,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 model=FastAutoModel()
 model.load_model(
-    "FILM6912/XiaoXi-TH-8B",
+    "FILM6912/Llama-3.2-1B-Instruct",
     device_map="cuda",
     load_in_4bit=True,
     )
@@ -85,7 +85,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 from film69.ml import FastLLM
 model=FastLLM()
 model.load_model(
-    "FILM6912/XiaoXi-TH-8B",
+    "FILM6912/Llama-3.2-1B-Instruct",
     device_map="cuda",
     load_in_4bit=True,
     )
@@ -99,7 +99,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 ```python
 from film69.ml.model import LLMModel
 model=LLMModel(
-    "FILM6912/XiaoXi-TH-8B",
+    "FILM6912/Llama-3.2-1B-Instruct",
     device_map="cuda",
     load_in_4bit=True,
     # load_in_8bit=True,
