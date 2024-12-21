@@ -12,4 +12,4 @@ except: print("Unable to import LlmRagChromadb")
 try:from .llama import Llama
 except:pass
 
-from convert_to_gguf import convert_to_gguf
+from .convert_to_gguf import convert_to_gguf
