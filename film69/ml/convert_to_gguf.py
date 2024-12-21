@@ -1,6 +1,6 @@
 import platform,os
 
-def convert_to_gguf(dir_model:str,output_name:str=None,quantization_method:list[str]= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"]):
+def convert_to_gguf(dir_model:str,output_name:str=None,quantization_method:list[str]= ["q8_0","f16"]):
     if platform.system()=="Linux":re=os.popen("ls").read().split("\n")
     else:re=os.popen("dir /b").read().split("\n")
 
