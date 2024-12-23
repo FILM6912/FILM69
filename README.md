@@ -26,7 +26,7 @@ pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.6#egg=film6
 # example
 #### FastAutoModel
 ```python
-from film69.ml import FastAutoModel
+from FILM69.ml import FastAutoModel
 from PIL import Image
 
 image=Image.open("image.jpg")
@@ -63,7 +63,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #### FastVLLM
 ```python
-from film69.ml import FastVLLM
+from FILM69.ml import FastVLLM
 from PIL import Image
 
 image=Image.open("image.jpg")
@@ -86,7 +86,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #### FastLLM
 ```python
-from film69.ml import FastLLM
+from FILM69.ml import FastLLM
 model=FastLLM()
 model.load_model(
     "FILM6912/Llama-3.2-1B-Instruct",
@@ -101,7 +101,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #### LLM
 ```python
-from film69.ml.model import LLMModel
+from FILM69.ml.model import LLMModel
 model=LLMModel(
     "FILM6912/Llama-3.2-1B-Instruct",
     device_map="cuda",
@@ -116,7 +116,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #### LLM API
 ```python
-from film69.ml.model import LLMModel
+from FILM69.ml.model import LLMModel
 from openai import OpenAI
 api=OpenAI(api_key="your_api_key",base_url="https://api.opentyphoon.ai/v1",)
 model=LLMModel(api=api,model_name="typhoon-v1.5x-70b-instruct",local=False)
@@ -127,7 +127,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #### VectorDB
 ```python
-from film69.ml.vectordb import VectorDB
+from FILM69.ml.vectordb import VectorDB
 db = VectorDB()
 db.add_or_update(
     documents=["สวัสดี","ไปไหน"],
@@ -141,7 +141,7 @@ db.delete(["doc1","doc2"])
 
 #### RAG Chromadb
 ```python
-from film69.ml.llm_rag_chromadb import LlmRagChromadb
+from FILM69.ml.llm_rag_chromadb import LlmRagChromadb
 x=LlmRagChromadb(
         api_key="",
         model="typhoon-v1.5-instruct",
