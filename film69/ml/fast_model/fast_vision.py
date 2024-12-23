@@ -109,6 +109,9 @@ class FastVLLM:
         )
         
         self.converted_dataset=dataset
+    
+    def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
+        self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
 
     def trainer(self,
         max_seq_length=2048,
