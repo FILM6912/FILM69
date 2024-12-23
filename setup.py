@@ -49,7 +49,7 @@ IOT=["minimalmodbus"]
 
 setup(
     name="film69",
-    version="0.4.6",
+    version="0.4.7",
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
     url="https://github.com/watcharaphon6912",
