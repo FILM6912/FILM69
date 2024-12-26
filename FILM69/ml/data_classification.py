@@ -58,8 +58,8 @@ class DataClassification(nn.Module):
         self.bias=bias
         if device_map=="auto":self.device_map = "cuda" if torch.cuda.is_available() else "cpu"
         else:self.device_map=device_map
-        self.classification=ClassificationLayer(input_size, class_output_size, class_hidden_size, class_num_layers, bias)
-        self.abnormal=AbnormalLayer(input_size, abnormal_hidden_size, abnormal_num_layers, bias)
+        self.classification=ClassificationLayer(input_size, class_output_size, class_hidden_size, class_num_layers, bias).to(self.device_map)
+        self.abnormal=AbnormalLayer(input_size, abnormal_hidden_size, abnormal_num_layers, bias).to(self.device_map)
        
     def forward(self, x):
         x1=self.classification(x)
