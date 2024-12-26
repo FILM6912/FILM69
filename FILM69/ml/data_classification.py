@@ -4,6 +4,7 @@ import torch.optim as optim
 import json,os
 from sklearn.datasets import make_circles
 from sklearn.model_selection import train_test_split
+from tqdm.autonotebook import tqdm, trange
 
 class AbnormalLayer(nn.Module):
     def __init__(self, input_size=2,  hidden_size=2028, num_layers=16, bias=False):
@@ -91,11 +92,10 @@ class DataClassification(nn.Module):
                 
         return predicted,abnormal
     
-    def trainer(self,X_train,y_train,epochs = 600,learning_rate=0.001):
+    def trainer(self,X_train,y_train,epochs = 600,learning_rate=0.001,logging_step=50):
         X_train=torch.tensor(X_train,dtype=torch.float32, device=self.device_map)
         y_train=torch.tensor(y_train,dtype=torch.long, device=self.device_map)
     
-
         def accuracy_fn(y_true, y_pred):
             correct = torch.eq(y_true, y_pred).sum().item()
             acc = (correct / len(y_pred)) * 100
@@ -105,7 +105,7 @@ class DataClassification(nn.Module):
         loss_fn = nn.CrossEntropyLoss() 
         optimizer =  optim.Adam(self.parameters(), lr=learning_rate)
 
-        for epoch in range(epochs):
+        for epoch in trange(epochs):
             out1,out2 = self(X_train)
             _, y_pred = torch.max(out1, 1)
 
@@ -117,16 +117,17 @@ class DataClassification(nn.Module):
             
             self.eval()
             # with torch.inference_mode():
-            #   test_logits,_ = model_3(X_test)
+            #   test_logits,_ = model_train(X_test)
             #   test_logits=test_logits.squeeze()
             #   test_pred = torch.round(torch.sigmoid(test_logits))
             #   test_loss = loss_fn(test_logits, y_test)
             #   test_acc = accuracy_fn(y_true=y_test,y_pred=test_pred)
 
-            if epoch % 50 == 0:
+            if epoch % logging_step == 0:
                 # print(f"Epoch: {epoch} | Loss: {loss:.5f}, Accuracy: {acc:.2f}% | Test Loss: {test_loss:.5f}, Test Accuracy: {test_acc:.2f}%")
                 print(f"Epoch: {epoch}\t|\tLoss: {loss:.5f} \t|\t Accuracy: {acc:.2f}%")
                 # print(f"Epoch: {epoch}")
+        print(f"Epoch: {epoch}\t|\tLoss: {loss:.5f} \t|\t Accuracy: {acc:.2f}%")
                 
     def total_params(self):
         total_params = sum(p.numel() for p in self.parameters())
@@ -148,15 +149,15 @@ class DataClassification(nn.Module):
         
         with open(model_name+"/config.json", 'w') as file:
             json.dump(data, file, indent=4)
-        print(f"Model saved to {model_name}.pth")
+        print(f"Model saved to {model_name}")
         
-
 if __name__=="__main__":
+    #train
     n_samples = 1000
     X, y = make_circles(n_samples,noise=0.03,random_state=42)
     X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=42) # make the random split reproducible
     
-    model_3 = DataClassification(
+    model_train = DataClassification(
         input_size=2,
         class_output_size=2,
         class_hidden_size=8,
@@ -166,15 +167,18 @@ if __name__=="__main__":
         bias=True
     )
     
-    total_params=model_3.total_params()
+    total_params=model_train.total_params()
     print(f"Total parameters: {total_params:,}")
-    for name, param in model_3.named_parameters():
+    for name, param in model_train.named_parameters():
         print(name)
         
-    model_3.trainer(X_train,y_train,epochs=600)
-    y_pre,ad=model_3.predict(X_test)
+    model_train.trainer(X_train,y_train,epochs=600)
+    y_pre,ad=model_train.predict(X_test)
     
-    model_3.save_model("model")
+    #Save the model.
+    model_train.save_model("model")
+    
+    #Use the model
     model = DataClassification()
     model.load_model("model",device_map="cuda")
     model.predict(X_test)
