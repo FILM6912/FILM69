@@ -6,21 +6,16 @@ from langchain_core.outputs import GenerationChunk
 from ..fast_model import FastLLM
 
 class LangChainFastLLM(LLM):
-    model_name:str
+    # model_name:str
     model_llm: FastLLM=None
-    top_k=15
-    top_p=0.95
-    temperature=0.2
-    kwargs:Dict[str,Any]=None
+    # top_k:int=15
+    # top_p:float=0.95
+    # temperature:float=0.2
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model_llm=FastLLM()
         self.model_llm.load_model(
-            self.model_name,
-            top_k=self.top_k,
-            top_p=self.top_p,
-            temperature=self.temperature,
-            **self.kwargs
+            **kwargs
             )
     
     def _call(
