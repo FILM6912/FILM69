@@ -275,3 +275,6 @@ class FastLLM:
         token = token,
         **kwargs
     )
+
+    def save_model_to_hub(self,repo_id,save_method = "merged_16bit",**kwargs):
+        self.model.push_to_hub_merged(repo_id, self.tokenizer, save_method = save_method, **kwargs)
