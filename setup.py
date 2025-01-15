@@ -10,6 +10,8 @@ common_packages = [
     "openai",
     "sentence-transformers",
     "ipywidgets",
+    "plotly",
+    "matplotlib"
 ]
 
 LLM=[
