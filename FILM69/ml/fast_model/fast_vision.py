@@ -82,7 +82,7 @@ class FastVLLM:
         self.history_images=[]
     
     def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
-        self.model, self.tokenizer = FastVisionModel.from_pretrained(
+        self.model, self.processor = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
             load_in_4bit = load_in_4bit,
@@ -111,7 +111,7 @@ class FastVLLM:
         self.converted_dataset=dataset
     
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
-        self.model.save_pretrained_merged(model_name, self.tokenizer, save_method = save_method,**kwargs)
+        self.model.save_pretrained_merged(model_name, self.processor, save_method = save_method,**kwargs)
 
     def trainer(self,
         max_seq_length=2048,
@@ -134,9 +134,9 @@ class FastVLLM:
 
         self._trainer = SFTTrainer(
             model = self.model,
-            tokenizer = self.tokenizer,
+            tokenizer = self.processor,
             # data_collator = DataCollator(model, tokenizer), # Must use!
-            data_collator = DataCollator(self.model, self.tokenizer), # Must use!
+            data_collator = DataCollator(self.model, self.processor), # Must use!
             train_dataset = self.converted_dataset,
             callbacks=callbacks,
             args = SFTConfig(
@@ -183,7 +183,7 @@ class FastVLLM:
         **kwargs):
 
         if end==None:
-            end=[self.tokenizer.tokenizer.eos_token]
+            end=[self.processor.tokenizer.eos_token]
 
         FastVisionModel.for_inference(self.model)
         if images==None:messages = {"role": "user", "content": [{"type": "text", "text": text}]}
@@ -198,16 +198,16 @@ class FastVLLM:
             else:imagess=[]
     
         
-        self.streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
+        self.streamer = TextIteratorStreamer(self.processor, skip_prompt=True, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         if apply_chat_template==True :
-            input_text = self.tokenizer.apply_chat_template(self.history if history_save else [messages], add_generation_prompt = True)
-            input_ids = self.tokenizer(None if imagess==[] else imagess,input_text,add_special_tokens = False,return_tensors = "pt",).to(self.model.device)
+            input_text = self.processor.apply_chat_template(self.history if history_save else [messages], add_generation_prompt = True)
+            input_ids = self.processor(None if imagess==[] else imagess,input_text,add_special_tokens = False,return_tensors = "pt",).to(self.model.device)
     
         # else:
         #     self.chat_format=apply_chat_template
 
         
-        terminators = [self.tokenizer.tokenizer.eos_token_id]+[self.tokenizer.tokenizer.convert_tokens_to_ids(i) for i in end]
+        terminators = [self.processor.tokenizer.eos_token_id]+[self.processor.tokenizer.convert_tokens_to_ids(i) for i in end]
         if stream==True:
             thread = Thread(target=self.model.generate, kwargs=
                             {
@@ -246,7 +246,7 @@ class FastVLLM:
                  **kwargs
             )
             response = outputs[0][input_ids["input_ids"].shape[-1]:]
-            text_out=self.tokenizer.decode(response, skip_special_tokens=True)
+            text_out=self.processor.decode(response, skip_special_tokens=True)
             if history_save:self.history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
 
             return text_out
