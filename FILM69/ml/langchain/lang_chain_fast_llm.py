@@ -12,30 +12,28 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
-from FILM69.ml import FastLLM
+from ..fast_model import FastAutoModel
 
 class LangChainFastLLM(BaseChatModel):
     model_name: str
-    model_llm:FastLLM=None
+    model_llm:FastAutoModel=None
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model_llm=FastLLM()
         del kwargs["model_name"]
-        self.model_llm.load_model(
-            model_name=self.model_name,
-            **kwargs
-            )
-
+        kwargs_model=kwargs
+        self.model_llm=FastAutoModel(model_name=self.model_name,**kwargs_model)
+       
     def _generate(
         self,
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        max_new_tokens=1024,
         **kwargs: Any,
     ) -> ChatResult:
         
-        tokens = self.model_llm.generate(messages)
+        tokens = self.model_llm.generate(messages,history_save=False,max_new_tokens=max_new_tokens)
         ct_input_tokens = sum(len(message.content) for message in messages)
         ct_output_tokens = len(tokens)
         message = AIMessage(
@@ -59,11 +57,12 @@ class LangChainFastLLM(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        max_new_tokens=1024,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         ct_input_tokens = sum(len(message.content) for message in messages)
 
-        for token in self.model_llm.generate(messages,stream=True):
+        for token in self.model_llm.generate(messages,stream=True,history_save=False,max_new_tokens=max_new_tokens):
             usage_metadata = UsageMetadata(
                 {
                     "input_tokens": ct_input_tokens,
