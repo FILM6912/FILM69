@@ -78,8 +78,8 @@ class DataCollator:
 
 class FastVLLM:
     def __init__(self) -> None:
-        self.history = []
-        self.history_images=[]
+        self.chat_history = []
+        self.images_history=[]
     
     def load_model(self,model_name,dtype=torch.float16,load_in_4bit=False,**kwargs): 
         self.model, self.processor = FastVisionModel.from_pretrained(
@@ -190,9 +190,9 @@ class FastVLLM:
         else:messages = {"role": "user", "content": [{"type": "image"},{"type": "text", "text": text}]}
             
         if history_save==True:
-            self.history.append(messages)
-            if images !=None:self.history_images.append(images)
-            imagess=self.history_images
+            self.chat_history.append(messages)
+            if images !=None:self.images_history.append(images)
+            imagess=self.images_history
         else:
             if images !=None:imagess=[images]
             else:imagess=[]
@@ -200,7 +200,7 @@ class FastVLLM:
         
         self.streamer = TextIteratorStreamer(self.processor, skip_prompt=True, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         if apply_chat_template==True :
-            input_text = self.processor.apply_chat_template(self.history if history_save else [messages], add_generation_prompt = True)
+            input_text = self.processor.apply_chat_template(self.chat_history if history_save else [messages], add_generation_prompt = True)
             input_ids = self.processor(None if imagess==[] else imagess,input_text,add_special_tokens = False,return_tensors = "pt",).to(self.model.device)
     
         # else:
@@ -231,7 +231,7 @@ class FastVLLM:
                     if i!=1:
                         text_out+=new_text
                         for te in new_text:yield  te
-                if history_save:self.history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
+                if history_save:self.chat_history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
                 
                 thread.join()
             return inner()
@@ -247,7 +247,7 @@ class FastVLLM:
             )
             response = outputs[0][input_ids["input_ids"].shape[-1]:]
             text_out=self.processor.decode(response, skip_special_tokens=True)
-            if history_save:self.history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
+            if history_save:self.chat_history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
 
             return text_out
 
