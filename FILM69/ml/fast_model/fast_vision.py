@@ -171,7 +171,7 @@ class FastVLLM:
         self._trainer.train()
 
     def generate(self,
-        text:str,
+        text:str="",
         images:Image =None,
         max_new_tokens:int=512,
         stream:bool=False,
@@ -189,20 +189,20 @@ class FastVLLM:
         if images==None:messages = {"role": "user", "content": [{"type": "text", "text": text}]}
         else:messages = {"role": "user", "content": [{"type": "image"},{"type": "text", "text": text}]}
             
-        if history_save==True:
-            self.chat_history.append(messages)
-            if images !=None:self.images_history.append(images)
-            imagess=self.images_history
-        else:
-            if images !=None:imagess=[images]
-            else:imagess=[]
-    
+        self.chat_history.append(messages)
+        if images !=None:self.images_history.append(images)
+        imagess=self.images_history
+  
         
         self.streamer = TextIteratorStreamer(self.processor, skip_prompt=True, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         if apply_chat_template==True :
-            input_text = self.processor.apply_chat_template(self.chat_history if history_save else [messages], add_generation_prompt = True)
+            input_text = self.processor.apply_chat_template(self.chat_history, add_generation_prompt = True)
             input_ids = self.processor(None if imagess==[] else imagess,input_text,add_special_tokens = False,return_tensors = "pt",).to(self.model.device)
     
+        if history_save==False:
+            if text != "":del self.chat_history[-1]
+            if images==None:del self.images_history[-1]
+            
         # else:
         #     self.chat_format=apply_chat_template
 
