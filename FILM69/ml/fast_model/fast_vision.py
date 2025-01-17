@@ -201,7 +201,7 @@ class FastVLLM:
     
         if history_save==False:
             if text != "":del self.chat_history[-1]
-            if images==None:del self.images_history[-1]
+            if images != None:del self.images_history[-1]
             
         # else:
         #     self.chat_format=apply_chat_template
