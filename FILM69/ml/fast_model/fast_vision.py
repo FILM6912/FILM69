@@ -180,6 +180,7 @@ class FastVLLM:
         temperature=0.4,
         top_p=0.9,
         end:list[str]=None,
+        add_images_to_model_history=False,
         **kwargs):
 
         if end==None:
@@ -188,24 +189,24 @@ class FastVLLM:
         FastVisionModel.for_inference(self.model)
         if images==None:messages = {"role": "user", "content": [{"type": "text", "text": text}]}
         else:messages = {"role": "user", "content": [{"type": "image"},{"type": "text", "text": text}]}
-            
+        
         self.chat_history.append(messages)
         if images !=None:self.images_history.append(images)
         imagess=self.images_history
-  
+        if not add_images_to_model_history:
+            chat = [{'role': his['role'], 'content': [k for k in his['content'] if k['type'] == 'text']} 
+                if his['role'] == 'user' else his for his in self.chat_history[:-1]] + [self.chat_history[-1]]
+            if images:imagess = [images]
+            else:imagess = []
         
         self.streamer = TextIteratorStreamer(self.processor, skip_prompt=True, skip_special_tokens=True,do_sample=True,temperature=0.4,top_p=0.9)
         if apply_chat_template==True :
-            input_text = self.processor.apply_chat_template(self.chat_history, add_generation_prompt = True)
+            input_text = self.processor.apply_chat_template(chat, add_generation_prompt = True)
             input_ids = self.processor(None if imagess==[] else imagess,input_text,add_special_tokens = False,return_tensors = "pt",).to(self.model.device)
-    
+        
         if history_save==False:
             if text != "":del self.chat_history[-1]
-            if images != None:del self.images_history[-1]
-            
-        # else:
-        #     self.chat_format=apply_chat_template
-
+            if images!=None:del self.images_history[-1]
         
         terminators = [self.processor.tokenizer.eos_token_id]+[self.processor.tokenizer.convert_tokens_to_ids(i) for i in end]
         if stream==True:
@@ -283,3 +284,4 @@ if __name__ == "__main__":
     model.trainer(max_steps = 60,logging_steps=1)
 
     model.start_train()
+
