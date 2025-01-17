@@ -252,6 +252,7 @@ class FastVLLM:
             return text_out
 
 
+
 if __name__ == "__main__":
     model = FastVLLM()
     model.load_model("Llama-3.2-11B-Vision-Instruct",load_in_4bit=True)
