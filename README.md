@@ -31,8 +31,7 @@ from PIL import Image
 
 image=Image.open("image.jpg")
 
-model=FastAutoModel()
-model.load_model(
+model=FastAutoModel(
     "FILM6912/Llama-3.2-11B-Vision-Instruct",
     device_map="cuda",
     load_in_4bit=True,
@@ -49,8 +48,7 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 #####################################################################################
 
-model=FastAutoModel()
-model.load_model(
+model=FastAutoModel(
     "FILM6912/Llama-3.2-1B-Instruct",
     device_map="cuda",
     load_in_4bit=True,
