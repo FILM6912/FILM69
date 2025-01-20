@@ -12,17 +12,44 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
-from ..fast_model import FastAutoModel
+from FILM69.ml import FastAutoModel
+from PIL import Image
+import base64
+from io import BytesIO
+from langchain_core.messages import HumanMessage,SystemMessage,AIMessage
 
 class LangChainFastLLM(BaseChatModel):
     model_name: str
     model_llm:FastAutoModel=None
+    format_message:list=[]
+    images:list=[]
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         del kwargs["model_name"]
         kwargs_model=kwargs
         self.model_llm=FastAutoModel(model_name=self.model_name,**kwargs_model)
+    
+    def base64_to_pil_image(self,base64_str):
+        base64_data = base64_str.split(",")[1] if "," in base64_str else base64_str
+        image_data = base64.b64decode(base64_data)
+        image_stream = BytesIO(image_data)
+        pil_image = Image.open(image_stream)
+        return pil_image
+    
+    def apply_chat_template(self,message):
+        self.format_message=[]
+        self.images=[]
+        for i in message:
+            if type(i)==HumanMessage:
+                _type="user"
+                self.images.extend(self.base64_to_pil_image(i["image_url"]["url"]) for i in i.content if i["type"] == "image_url")
+            elif type(i) == AIMessage:_type="assistant"
+            elif type(i)== SystemMessage:_type="system"
+            
+            self.format_message.append({'role': _type,'content':
+                        [{'type': 'text', 'text': j['text']} if j['type']=="text" else {'type': 'image'}
+                    for j in i.content]})
        
     def _generate(
         self,
@@ -33,7 +60,10 @@ class LangChainFastLLM(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         
-        tokens = self.model_llm.generate(messages,history_save=False,max_new_tokens=max_new_tokens)
+        self.apply_chat_template(message)
+        self.model_llm.chat_history=self.format_message[:-1]
+        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],images=self.images[-1] if self.images!=[] else None,history_save=False,max_new_tokens=max_new_tokens)
+        
         ct_input_tokens = sum(len(message.content) for message in messages)
         ct_output_tokens = len(tokens)
         message = AIMessage(
@@ -60,9 +90,12 @@ class LangChainFastLLM(BaseChatModel):
         max_new_tokens=1024,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        print(messages)
         ct_input_tokens = sum(len(message.content) for message in messages)
-
-        for token in self.model_llm.generate(messages,stream=True,history_save=False,max_new_tokens=max_new_tokens):
+        self.apply_chat_template(messages)
+        
+        tokens = self.model_llm.generate(self.format_message,images=self.images[-1] if self.images!=[] else None,stream=True,history_save=False,max_new_tokens=max_new_tokens)
+        for token in tokens:
             usage_metadata = UsageMetadata(
                 {
                     "input_tokens": ct_input_tokens,
