@@ -57,12 +57,18 @@ class LangChainFastLLM(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         max_new_tokens=1024,
+        max_images_size=1000,
         **kwargs: Any,
     ) -> ChatResult:
         
-        self.apply_chat_template(message)
+        self.apply_chat_template(messages)
         self.model_llm.chat_history=self.format_message[:-1]
-        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],images=self.images[-1] if self.images!=[] else None,history_save=False,max_new_tokens=max_new_tokens)
+        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
+                    images=self.images[-1] if self.images!=[] else None,
+                    history_save=False,
+                    stream=False,
+                    max_new_tokens=max_new_tokens,
+                    max_images_size=max_images_size)
         
         ct_input_tokens = sum(len(message.content) for message in messages)
         ct_output_tokens = len(tokens)
@@ -88,13 +94,21 @@ class LangChainFastLLM(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         max_new_tokens=1024,
+        max_images_size=1000,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        print(messages)
+        # print(messages)
         ct_input_tokens = sum(len(message.content) for message in messages)
-        self.apply_chat_template(messages)
         
-        tokens = self.model_llm.generate(self.format_message,images=self.images[-1] if self.images!=[] else None,stream=True,history_save=False,max_new_tokens=max_new_tokens)
+        self.apply_chat_template(messages)
+        self.model_llm.chat_history=self.format_message[:-1]
+        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
+                    images=self.images[-1] if self.images!=[] else None,
+                    history_save=False,
+                    stream=True,
+                    max_new_tokens=max_new_tokens,
+                    max_images_size=max_images_size)
+        
         for token in tokens:
             usage_metadata = UsageMetadata(
                 {
