@@ -169,12 +169,12 @@ class FastVLLM:
 
     def start_train(self):
         self._trainer.train()
-
+        
     def resize_image_pil(self,image, max_size=1100):
         img_copy = image.copy()
         img_copy.thumbnail((max_size, max_size))
         return img_copy
-    
+
     def generate(self,
         text:str="",
         images:Image =None,
@@ -194,10 +194,13 @@ class FastVLLM:
 
         FastVisionModel.for_inference(self.model)
         if images==None:messages = {"role": "user", "content": [{"type": "text", "text": text}]}
-        else:messages = {"role": "user", "content": [{"type": "image"},{"type": "text", "text": text}]}
+        else:
+            messages = {"role": "user", "content": [{"type": "image"},{"type": "text", "text": text}]}
         
         self.chat_history.append(messages)
-        if images !=None:self.images_history.append(self.resize_image_pil(images,max_images_size))
+        if images !=None:
+            images=self.resize_image_pil(images,max_images_size)
+            self.images_history.append(images)
         imagess=self.images_history
         if not add_images_to_model_history:
             chat = [{'role': his['role'], 'content': [k for k in his['content'] if k['type'] == 'text']} 
@@ -290,4 +293,3 @@ if __name__ == "__main__":
     model.trainer(max_steps = 60,logging_steps=1)
 
     model.start_train()
-
