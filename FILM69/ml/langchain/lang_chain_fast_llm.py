@@ -60,7 +60,8 @@ class LangChainFastLLM(BaseChatModel):
         max_images_size=1000,
         **kwargs: Any,
     ) -> ChatResult:
-        
+        try:len(messages)
+        except:messages=[messages]
         self.apply_chat_template(messages)
         self.model_llm.chat_history=self.format_message[:-1]
         tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
@@ -97,7 +98,8 @@ class LangChainFastLLM(BaseChatModel):
         max_images_size=1000,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        # print(messages)
+        try:len(messages)
+        except:messages=[messages]
         ct_input_tokens = sum(len(message.content) for message in messages)
         
         self.apply_chat_template(messages)
