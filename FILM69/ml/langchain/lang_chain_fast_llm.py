@@ -37,20 +37,33 @@ class LangChainFastLLM(BaseChatModel):
         pil_image = Image.open(image_stream)
         return pil_image
     
+    def pil_image_to_base64(self,pil_image):
+        buffered = BytesIO()
+        pil_image.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return img_str
+    
     def apply_chat_template(self,message):
         self.format_message=[]
         self.images=[]
         for i in message:
             if type(i)==HumanMessage:
                 _type="user"
-                self.images.extend(self.base64_to_pil_image(i["image_url"]["url"]) for i in i.content if i["type"] == "image_url")
             elif type(i) == AIMessage:_type="assistant"
             elif type(i)== SystemMessage:_type="system"
             
-            self.format_message.append({'role': _type,'content':
-                        [{'type': 'text', 'text': j['text']} if j['type']=="text" else {'type': 'image'}
-                    for j in i.content]})
-       
+            content=[]
+            if type(i.content) == list:
+                for j in i.content:
+                    if j["type"]=="text":content.append({'type': 'text', 'text': j['text']})
+                    else:
+                        content.append({'type': 'image'})
+                        self.images.append(self.base64_to_pil_image(j["image_url"]))
+            else:
+                content.append({'type': 'text', 'text': i.content})
+
+            self.format_message.append({'role': _type,'content':content})
+
     def _generate(
         self,
         messages: List[BaseMessage],
@@ -63,13 +76,16 @@ class LangChainFastLLM(BaseChatModel):
         try:len(messages)
         except:messages=[messages]
         self.apply_chat_template(messages)
+        
         self.model_llm.chat_history=self.format_message[:-1]
-        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
-                    images=self.images[-1] if self.images!=[] else None,
-                    history_save=False,
-                    stream=False,
-                    max_new_tokens=max_new_tokens,
-                    max_images_size=max_images_size)
+        
+        tokens = self.model_llm.generate(
+            [i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
+            images=self.images[-1] if self.images!=[] else None,
+            history_save=False,
+            stream=False,
+            max_new_tokens=max_new_tokens,
+            max_images_size=max_images_size)
         
         ct_input_tokens = sum(len(message.content) for message in messages)
         ct_output_tokens = len(tokens)
