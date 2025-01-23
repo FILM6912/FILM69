@@ -12,7 +12,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
-from FILM69.ml import FastAutoModel
+from ..fast_model.auto_model import FastAutoModel
 from PIL import Image
 import base64
 from io import BytesIO
