@@ -223,12 +223,12 @@ class FastLLM:
             def inner():
                 i=0
                 text_out=""
-                if history_save:self.chat_history.append({"role": "system","content": text_out})
+                if history_save:self.chat_history.append({"role": "assistant","content": text_out})
                 for new_text in self.streamer:
                     i+=1
                     if i!=1:
                         text_out+=new_text
-                        if history_save:self.chat_history[-1]={"role": "system","content": text_out}
+                        if history_save:self.chat_history[-1]={"role": "assistant","content": text_out}
                         for te in new_text:yield  te
 
                 thread.join()
@@ -245,7 +245,7 @@ class FastLLM:
             response = outputs[0][input_ids.shape[-1]:]
             text_out=self.tokenizer.decode(response, skip_special_tokens=True)
 
-            if history_save:self.chat_history.append({"role": "system","content": text_out})
+            if history_save:self.chat_history.append({"role": "assistant","content": text_out})
             return text_out
         
     def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=False,**kwargs):
