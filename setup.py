@@ -23,8 +23,6 @@ LLM=[
     "trl",
     "peft",
     "huggingface-hub",
-    "bitsandbytes",
-    "triton",
     "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
 ]
 
@@ -32,6 +30,8 @@ linux=[
     "flash-attn==2.7.3",
     "xformers",
     "ninja",
+    "bitsandbytes",
+    "triton",
 ]
 
 RAG=[
