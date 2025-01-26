@@ -24,11 +24,16 @@ LLM=[
     "peft",
     "huggingface-hub",
     "bitsandbytes",
-    "xformers",
     "ninja",
     "triton",
     "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
 ]
+
+linux=[
+    "flash-attn==2.7.3",
+    "xformers",
+]
+
 RAG=[
     "pymilvus",
     "chromadb",
@@ -63,7 +68,8 @@ setup(
         "speech": common_packages + SPEECH,
         "ui": UI,
         "iot":IOT,
-        "all": common_packages + LLM + RAG + UI + SPEECH+IOT,
+        "all": common_packages + LLM + RAG + UI + SPEECH+IOT+linux,
+        "all_win": common_packages + LLM + RAG + UI + SPEECH+IOT,
         "all_llama-cpp": common_packages + LLM + RAG + UI + SPEECH + ["llama-cpp-python==0.3.1"]
     },
     classifiers=[
