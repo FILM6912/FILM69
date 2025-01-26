@@ -30,8 +30,7 @@ linux=[
     "flash-attn==2.7.3",
     "xformers",
     "ninja",
-    "bitsandbytes",
-    "triton",
+    # "bitsandbytes",
 ]
 
 RAG=[
