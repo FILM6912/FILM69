@@ -57,6 +57,7 @@ langchain=[
     "langchain-ollama",
     "langchain-openai",
     "langgraph",
+    "langchain-core"
 ]
 
 setup(
