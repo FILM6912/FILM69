@@ -1,4 +1,4 @@
-# install FILM69
+# FILM69
 
 <details>
   <summary style="font-size: 25px;">Install</summary>
