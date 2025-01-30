@@ -1,5 +1,6 @@
 from .model import LLMModel
-from .vectordb import VectorDB
+try:from .vectordb import VectorDB
+except:print("Unable to import VectorDB")
 from .data_classification import DataClassification
 try:
     from .whisper import Whisper
