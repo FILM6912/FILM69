@@ -11,70 +11,69 @@ from trl import SFTTrainer, SFTConfig
 from threading import Thread
 from PIL import Image
 from datasets import load_dataset
-from unsloth.trainer import UnslothVisionDataCollator
 
-# class DataCollator:
-#     __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
+class DataCollator:
+    __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
 
-#     def __init__(self, model, processor, ignore_index = -100):
-#         self.padding_token_ids = get_padding_tokens_ids(processor)
-#         self.dtype = _get_dtype(
-#             model.config.torch_dtype \
-#             if hasattr(model.config, "torch_dtype") else \
-#             model.get_input_embeddings().weight.dtype
-#         )
-#         self.ignore_index = ignore_index
-#         self.processor = processor
-#         return
+    def __init__(self, model, processor, ignore_index = -100):
+        self.padding_token_ids = get_padding_tokens_ids(processor)
+        self.dtype = _get_dtype(
+            model.config.torch_dtype \
+            if hasattr(model.config, "torch_dtype") else \
+            model.get_input_embeddings().weight.dtype
+        )
+        self.ignore_index = ignore_index
+        self.processor = processor
+        return
 
-#     def __call__(self, examples):
+    def __call__(self, examples):
     
-#         texts  = []
-#         images = []
-#         for example in examples:
-#             messages = example["messages"]
-#             message = self.processor.apply_chat_template(
-#                 messages,
-#                 tokenize = False,
-#                 add_generation_prompt = False,
-#             )
+        texts  = []
+        images = []
+        for example in examples:
+            messages = example["messages"]
+            message = self.processor.apply_chat_template(
+                messages,
+                tokenize = False,
+                add_generation_prompt = False,
+            )
     
-#             if "images" in example:
-#                 image = example["images"][0]
-#             else:
-#                 image, video = process_vision_info(messages)
-#             texts .append(message)
-#             if image !=None:
-#                 images.append(image)
+            if "images" in example:
+                image = example["images"][0]
+            else:
+                image, video = process_vision_info(messages)
+            texts .append(message)
+            if image !=None:
+                images.append(image)
 
-#         batch = self.processor(
-#             text    = texts,
-#             images  = None if images==[] else images,
-#             padding = True,
-#             # truncation = True,
-#             return_tensors = "pt",
-#         )
-#         batch.pop("token_type_ids", None)
+        batch = self.processor(
+            text    = texts,
+            images  = None if images==[] else images,
+            padding = True,
+            # truncation = True,
+            return_tensors = "pt",
+        )
+        batch.pop("token_type_ids", None)
         
-#         if images!=[]:
-#             pixel_values = batch["pixel_values"]
-#             if type(pixel_values) is list:
-#                 for j, pixel_value_j in enumerate(pixel_values):
-#                     if type(pixel_value_j) is list:
-#                         for k, pixel_value_k in enumerate(pixel_value_j):
-#                             pixel_value_j[k] = pixel_value_k.to(self.dtype)
-#                     else:
-#                         pixel_values[j] = pixel_value_j.to(self.dtype)
-#                 pass
-#                 batch["pixel_values"] = pixel_values
-#             else:
-#                 batch["pixel_values"] = batch["pixel_values"].to(self.dtype)
-#             pass
+        if images!=[]:
+            pixel_values = batch["pixel_values"]
+            if type(pixel_values) is list:
+                for j, pixel_value_j in enumerate(pixel_values):
+                    if type(pixel_value_j) is list:
+                        for k, pixel_value_k in enumerate(pixel_value_j):
+                            pixel_value_j[k] = pixel_value_k.to(self.dtype)
+                    else:
+                        pixel_values[j] = pixel_value_j.to(self.dtype)
+                pass
+                batch["pixel_values"] = pixel_values
+            else:
+                batch["pixel_values"] = batch["pixel_values"].to(self.dtype)
+            pass
 
-#         labels = batch["input_ids"].clone()
-#         labels[torch.isin(labels, self.padding_token_ids)] = self.ignore_index
-#         batch["labels"] = labels
-#         return batch
+        labels = batch["input_ids"].clone()
+        labels[torch.isin(labels, self.padding_token_ids)] = self.ignore_index
+        batch["labels"] = labels
+        return batch
 
 
 class FastVLLM:
@@ -90,23 +89,34 @@ class FastVLLM:
             **kwargs
         )
     
-
-    def load_dataset(self,dataset,chat_template = None,add_eot=True,additional_information=False):
-        
-        self.model = FastVisionModel.get_peft_model(
-            self.model,
+    def load_dataset(self,
+            dataset,
             finetune_vision_layers     = True, # False if not finetuning vision layers
             finetune_language_layers   = True, # False if not finetuning language layers
             finetune_attention_modules = True, # False if not finetuning attention layers
             finetune_mlp_modules       = True, # False if not finetuning MLP layers
-
             r = 16,           # The larger, the higher the accuracy, but might overfit
             lora_alpha = 16,  # Recommended alpha == r at least
             lora_dropout = 0,
             bias = "none",
             random_state = 3407,
             use_rslora = False,  # We support rank stabilized LoRA
-            loftq_config = None, # And LoftQ
+            loftq_config = None, # And LoftQ       
+        ):
+        self.model = FastVisionModel.get_peft_model(
+            self.model,
+            finetune_vision_layers     = finetune_vision_layers,
+            finetune_language_layers   = finetune_language_layers,
+            finetune_attention_modules = finetune_attention_modules,
+            finetune_mlp_modules       = finetune_mlp_modules,
+
+            r = r,           
+            lora_alpha = lora_alpha, 
+            lora_dropout = lora_dropout,
+            bias = bias,
+            random_state = random_state,
+            use_rslora = use_rslora,  
+            loftq_config = loftq_config, 
         )
         
         self.converted_dataset=dataset
@@ -136,7 +146,7 @@ class FastVLLM:
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.processor,
-            data_collator = UnslothVisionDataCollator(self.model, self.processor), # Must use!
+            data_collator = DataCollator(self.model, self.processor), # Must use!
             # data_collator = DataCollator(self.model, self.processor), # Must use!
             train_dataset = self.converted_dataset,
             callbacks=callbacks,
