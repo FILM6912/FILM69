@@ -70,7 +70,7 @@ class LangChainFastLLM(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        max_new_tokens=1024,
+        max_new_tokens=8092,
         max_images_size=1000,
         **kwargs: Any,
     ) -> ChatResult:
@@ -115,7 +115,7 @@ class LangChainFastLLM(BaseChatModel):
         messages: List[BaseMessage],
         stop: Optional[List[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        max_new_tokens=1024,
+        max_new_tokens=8092,
         max_images_size=1000,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
