@@ -17,9 +17,9 @@ class Encodec:
     def encode(self, audio_array):
        inputs = self.feature_extractor(raw_audio=audio_array, sampling_rate=self.sampling_rate, return_tensors="pt").to(self.device)
        inputs["padding_mask"]=inputs["padding_mask"].to(dtype=self.dtype)
-       return self.model.encode(inputs["input_values"])
+       return self.model.encode(inputs["input_values"]).audio_codes
    
     def decode(self, encoded_values):
-       return self.model.decode(encoded_values.audio_codes)[0].squeeze().detach().cpu().numpy()[:-1024]
+       return self.model.decode(encoded_values)[0].squeeze().detach().cpu().numpy()[:-1024]
    
        
