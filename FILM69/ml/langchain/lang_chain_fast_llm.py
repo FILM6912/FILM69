@@ -88,7 +88,7 @@ class LangChainFastLLM(BaseChatModel):
         }
         if self.model_type=="image":
             _kwargs["max_images_size"]=max_images_size,
-            _kwargs["images"]=self.images[-1] if self.images!=[] else None,
+            _kwargs["images"]= self.images[-1] if self.images!=[] else None
         
         tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],**_kwargs)
         
