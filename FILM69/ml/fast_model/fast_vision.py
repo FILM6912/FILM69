@@ -81,7 +81,7 @@ class FastVLLM:
         self.chat_history = []
         self.images_history=[]
     
-    def load_model(self,model_name,dtype=torch.float16,load_in_4bit=False,**kwargs): 
+    def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
         self.model, self.processor = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
