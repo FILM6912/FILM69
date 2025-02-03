@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional,Literal
 
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
@@ -23,6 +23,7 @@ class LangChainFastLLM(BaseChatModel):
     model_llm:FastAutoModel=None
     format_message:list=[]
     images:list=[]
+    model_type:Literal["text","image"]="text"
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -79,13 +80,17 @@ class LangChainFastLLM(BaseChatModel):
         
         self.model_llm.chat_history=self.format_message[:-1]
         
-        tokens = self.model_llm.generate(
-            [i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
-            images=self.images[-1] if self.images!=[] else None,
-            history_save=False,
-            stream=False,
-            max_new_tokens=max_new_tokens,
-            max_images_size=max_images_size)
+        
+        _kwargs={
+            "history_save":False,
+            "stream":False,
+            "max_new_tokens":max_new_tokens,
+        }
+        if self.model_type=="image":
+            _kwargs["max_images_size"]=max_images_size,
+            _kwargs["images"]=self.images[-1] if self.images!=[] else None,
+        
+        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],**_kwargs)
         
         ct_input_tokens = sum(len(message.content) for message in messages)
         ct_output_tokens = len(tokens)
@@ -120,12 +125,17 @@ class LangChainFastLLM(BaseChatModel):
         
         self.apply_chat_template(messages)
         self.model_llm.chat_history=self.format_message[:-1]
-        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],
-                    images=self.images[-1] if self.images!=[] else None,
-                    history_save=False,
-                    stream=True,
-                    max_new_tokens=max_new_tokens,
-                    max_images_size=max_images_size)
+        
+        _kwargs={
+            "history_save":False,
+            "stream":True,
+            "max_new_tokens":max_new_tokens,
+        }
+        if self.model_type=="image":
+            _kwargs["max_images_size"]=max_images_size,
+            _kwargs["images"]=self.images[-1] if self.images!=[] else None,
+        
+        tokens = self.model_llm.generate([i["text"] for i in self.format_message[-1]["content"] if i["type"] == "text"][0],**_kwargs)
         
         for token in tokens:
             usage_metadata = UsageMetadata(
