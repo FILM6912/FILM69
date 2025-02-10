@@ -39,10 +39,12 @@ class LLMModel:
                 text_out=""
                 if history_save:self.history.append({"role": "system","content": text_out})
                 for chunk in response:
-                    if chunk.choices[0].delta.content is not None: 
-                        text_out+=chunk.choices[0].delta.content
-                        if history_save:self.history[-1]={"role": "system","content": text_out}
-                        yield chunk.choices[0].delta.content
+                    try:
+                        if chunk.choices[0].delta.content is not None: 
+                            text_out+=chunk.choices[0].delta.content
+                            if history_save:self.history[-1]={"role": "system","content": text_out}
+                            yield chunk.choices[0].delta.content
+                    except:pass
             return inner()
             
         else:
