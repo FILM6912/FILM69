@@ -149,7 +149,7 @@ class FastLLM:
                 seed = 3407,
                 optim = "adamw_8bit",
                 lr_scheduler_type = "linear",
-                report_to ="none"
+                report_to ="none",
                 **kwargs):
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
         self._trainer = SFTTrainer(
