@@ -63,7 +63,7 @@ class FastLLM:
                 "after_assistant":"\n\n" 
             }
         }
-        self.chat_format="Llama3"
+        self.chat_format="model"
 
     def apply_chat_template(self,message):
         
@@ -93,9 +93,20 @@ class FastLLM:
             **kwargs
             # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
         )
-    
+        
+        messages = [
+            {'role': 'system', 'content': '{}'},
+            {'role': 'user', 'content': '{}'},
+            {'role': 'assistant', 'content': '{}'}
+        ]
 
-    def load_dataset(self,df=None,chat_template = None,add_eot=True,additional_information=False):
+        formatted_chat = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False
+        )
+        self.chat_template["model"]=formatted_chat
+        
+    def load_dataset(self,df=None,chat_template = "model",add_eot=True,additional_information=False):
         self.model = FastLanguageModel.get_peft_model(
             self.model,
             r = 16, # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -248,7 +259,7 @@ class FastLLM:
             if history_save:self.chat_history.append({"role": "assistant","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,**kwargs):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=False,**kwargs):
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
         source_directory = Path(model_name)
@@ -267,7 +278,7 @@ class FastLLM:
                 item_path = os.path.join(model_name, item)
                 if os.path.isfile(item_path):os.remove(item_path)
 
-    def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],token="",**kwargs):
+    def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token="",**kwargs):
         self.model.push_to_hub_gguf(
         model_name, 
         self.tokenizer,
