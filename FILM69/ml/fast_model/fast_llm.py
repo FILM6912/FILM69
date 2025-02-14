@@ -141,7 +141,16 @@ class FastLLM:
             return self.dataset
         return None
 
-    def trainer(self,max_seq_length=1024,learning_rate=2e-4,output_dir = "outputs",callbacks=None,**kwargs):
+    def trainer(self,max_seq_length=1024,learning_rate=2e-4,output_dir = "outputs",callbacks=None,dataset_num_proc=2,
+                weight_decay=0.01,
+                per_device_train_batch_size = 2,
+                gradient_accumulation_steps = 4,
+                warmup_steps = 5,
+                seed = 3407,
+                optim = "adamw_8bit",
+                lr_scheduler_type = "linear",
+                report_to ="none"
+                **kwargs):
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
         self._trainer = SFTTrainer(
             model = self.model,
@@ -149,23 +158,24 @@ class FastLLM:
             train_dataset = self.dataset,
             dataset_text_field = "text",
             max_seq_length = max_seq_length,
-            dataset_num_proc = 2,
+            dataset_num_proc = dataset_num_proc,
             packing = False, # Can make training 5x faster for short sequences.
             callbacks=callbacks,
             args = TrainingArguments(
-                per_device_train_batch_size = 2,
-                gradient_accumulation_steps = 4,
-                warmup_steps = 5,
+                per_device_train_batch_size = per_device_train_batch_size,
+                gradient_accumulation_steps = gradient_accumulation_steps,
+                warmup_steps =  warmup_steps,
                 # num_train_epochs = 1, # Set this for 1 full training run.
 
                 learning_rate = learning_rate,
                 fp16 = not is_bfloat16_supported(),
                 bf16 = is_bfloat16_supported(),
-                optim = "adamw_8bit",
-                weight_decay = 0.01,
-                lr_scheduler_type = "linear",
-                seed = 3407,
+                optim = optim,
+                weight_decay = weight_decay,
+                lr_scheduler_type = lr_scheduler_type,
+                seed = seed ,
                 output_dir = output_dir,
+                report_to = report_to ,
                 **kwargs
             ),
         )
