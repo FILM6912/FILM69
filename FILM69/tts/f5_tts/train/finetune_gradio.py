@@ -41,10 +41,9 @@ last_checkpoint = ""
 last_device = ""
 last_ema = None
 
-
 path_data = "data"
 path_project_ckpts = "ckpts"
-file_train = str(files("f5_tts").joinpath("train/finetune_cli.py"))
+file_train = str(files("FILM69/tts/f5_tts").joinpath("train/finetune_cli.py"))
 
 device = (
     "cuda"
