@@ -62,7 +62,7 @@ langchain=[
 
 setup(
     name="film69",
-    version="0.4.7",
+    version="0.4.8",
     author="Watcharaphon Pamayayang",
     author_email="filmmagic45@gmail.com",
     url="https://github.com/watcharaphon6912",
