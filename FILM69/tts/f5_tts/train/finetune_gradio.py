@@ -1400,12 +1400,16 @@ def get_audio_select(file_sample):
     return select_audio_ref, select_audio_gen
 
 def set_path(path_data_,path_ckpts_):
-    global path_data,path_project_ckpts
+    global path_data,path_project_ckpts,projects, projects_selelect
     path_data = path_data_
     path_project_ckpts = path_ckpts_
     os.environ["path_data"]=path_data
     os.environ["path_ckpts"]=path_project_ckpts
     print("set_ok")
+
+def get_project():
+    project_list, projects_selelect = get_list_projects()
+    return gr.update(choices=project_list, value=project_list[0])
 
 with gr.Blocks() as app:
     gr.Markdown(
@@ -1430,7 +1434,6 @@ For tutorial and updates check here (https://github.com/SWivid/F5-TTS/discussion
         path_ok.click(fn=set_path,inputs=[path_data,path_ckpts])
     
     with gr.Row():
-        # projects, projects_selelect = get_list_projects()
         projects, projects_selelect = ["None"],"None"
         tokenizer_type = gr.Radio(label="Tokenizer Type", choices=["pinyin", "char", "custom"], value="pinyin")
         project_name = gr.Textbox(label="Project Name", value="my_speak")
@@ -1440,7 +1443,13 @@ For tutorial and updates check here (https://github.com/SWivid/F5-TTS/discussion
         cm_project = gr.Dropdown(
             choices=projects, value=projects_selelect, label="Project", allow_custom_value=True, scale=6
         )
-        ch_refresh_project = gr.Button("Refresh", scale=1)
+        with gr.Column():
+            ch_refresh_project = gr.Button("Refresh", scale=1)
+            refresh_project = gr.Button("Refresh Project", scale=1)
+            
+            refresh_project.click(fn=get_project,outputs=[cm_project])
+        
+        
 
     bt_create.click(fn=create_data_project, inputs=[project_name, tokenizer_type], outputs=[cm_project])
 
