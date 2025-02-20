@@ -27,7 +27,7 @@ from FILM69.tts.f5_tts.infer.utils_infer import (
     preprocess_ref_audio_text,
     remove_silence_for_generated_wav,
 )
-from f5_tts.model import DiT, UNetT
+from FILM69.tts.f5_tts.model import DiT, UNetT
 
 
 parser = argparse.ArgumentParser(
