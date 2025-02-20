@@ -68,6 +68,14 @@ setup(
     url="https://github.com/watcharaphon6912",
     packages=find_packages(),
     python_requires=">=3.10",
+     entry_points={
+        "console_scripts": [
+            "f5-tts_infer-cli=FILM69.tts.f5_tts.infer.infer_cli:main",
+            "f5-tts_infer-gradio=FILM69.tts.f5_tts.infer.infer_gradio:main",
+            "f5-tts_finetune-cli=FILM69.tts.f5_tts.train.finetune_cli:main",
+            "f5-tts_finetune-gradio=FILM69.tts.f5_tts.train.finetune_gradio:main",
+        ],
+    },
     extras_require={
         "LLM": common_packages + LLM,
         "rag": common_packages + RAG,
