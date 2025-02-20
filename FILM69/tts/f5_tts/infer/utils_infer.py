@@ -19,7 +19,8 @@ import matplotlib.pylab as plt
 import numpy as np
 import torch
 import torchaudio
-import tqdm
+from tqdm import autonotebook as tqdm
+# import tqdm
 from huggingface_hub import snapshot_download, hf_hub_download
 from pydub import AudioSegment, silence
 from transformers import pipeline
@@ -268,7 +269,6 @@ def load_model(
 
     return model
 
-
 def remove_silence_edges(audio, silence_threshold=-42):
     # Remove silence from the start
     non_silent_start_idx = silence.detect_leading_silence(audio, silence_threshold=silence_threshold)
@@ -368,6 +368,7 @@ def infer_process(
     gen_text,
     model_obj,
     vocoder,
+    sr=24000,
     mel_spec_type=mel_spec_type,
     show_info=print,
     progress=tqdm,
@@ -381,7 +382,9 @@ def infer_process(
     device=device,
 ):
     # Split the input text into batches
-    audio, sr = torchaudio.load(ref_audio)
+    if type(ref_audio) == str:  audio, sr = torchaudio.load(ref_audio)
+    else: audio = torch.tensor(np.array([ref_audio]))
+        
     max_chars = int(len(ref_text.encode("utf-8")) / (audio.shape[-1] / sr) * (25 - audio.shape[-1] / sr))
     gen_text_batches = chunk_text(gen_text, max_chars=max_chars)
     for i, gen_text in enumerate(gen_text_batches):
