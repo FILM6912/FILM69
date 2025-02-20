@@ -1430,7 +1430,8 @@ For tutorial and updates check here (https://github.com/SWivid/F5-TTS/discussion
         path_ok.click(fn=set_path,inputs=[path_data,path_ckpts])
     
     with gr.Row():
-        projects, projects_selelect = get_list_projects()
+        # projects, projects_selelect = get_list_projects()
+        projects, projects_selelect = ["None"],"None"
         tokenizer_type = gr.Radio(label="Tokenizer Type", choices=["pinyin", "char", "custom"], value="pinyin")
         project_name = gr.Textbox(label="Project Name", value="my_speak")
         bt_create = gr.Button("Create a New Project")
