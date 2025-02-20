@@ -42,7 +42,22 @@ UI=[
     "streamlit",
     "stqdm",
     "ipywidgets",
-    "gradio"
+    "gradio",
+    "click",
+    "ema_pytorch>=0.5.2",
+    "hydra-core>=1.3.0",
+    "jieba",
+    "pydub",
+    "pypinyin",
+    "safetensors",
+    "soundfile",
+    "tomli",
+    "torchaudio",
+    "torchdiffeq",
+    "transformers_stream_generator",
+    "vocos",
+    "wandb",
+    "x_transformers>=1.31.14",
 ]
 
 SPEECH=[
@@ -50,6 +65,10 @@ SPEECH=[
     "librosa",
     "evaluate==0.4.3",
     "jiwer",
+    "accelerate",
+    "cached_path",
+    
+    
 ]
 IOT=["minimalmodbus"]
 langchain=[
