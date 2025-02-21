@@ -89,10 +89,10 @@ setup(
     python_requires=">=3.10",
      entry_points={
         "console_scripts": [
-            "f5-tts_infer-cli=FILM69.tts.f5_tts.infer.infer_cli:main",
-            "f5-tts_infer-gradio=FILM69.tts.f5_tts.infer.infer_gradio:main",
-            "f5-tts_finetune-cli=FILM69.tts.f5_tts.train.finetune_cli:main",
-            "f5-tts_finetune-gradio=FILM69.tts.f5_tts.train.finetune_gradio:main",
+            "tts_used_cli=FILM69.tts.f5_tts.infer.infer_cli:main",
+            "tts_used_gradio=FILM69.tts.f5_tts.infer.infer_gradio:main",
+            "tts_train_cli=FILM69.tts.f5_tts.train.finetune_cli:main",
+            "tts_train_ui=FILM69.tts.f5_tts.train.finetune_gradio:main",
         ],
     },
     extras_require={
