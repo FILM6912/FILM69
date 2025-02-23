@@ -43,7 +43,15 @@ UI=[
     "stqdm",
     "ipywidgets",
     "gradio",
-    "click",
+]
+
+SPEECH=[
+    "datasets>=2.6.1",
+    "librosa",
+    "evaluate==0.4.3",
+    "jiwer",
+    "accelerate",
+    "cached_path",
     "ema_pytorch>=0.5.2",
     "hydra-core>=1.3.0",
     "jieba",
@@ -58,16 +66,7 @@ UI=[
     "vocos",
     "wandb",
     "x_transformers>=1.31.14",
-]
-
-SPEECH=[
-    "datasets>=2.6.1",
-    "librosa",
-    "evaluate==0.4.3",
-    "jiwer",
-    "accelerate",
-    "cached_path",
-    
+    "click",
     
 ]
 IOT=["minimalmodbus"]
