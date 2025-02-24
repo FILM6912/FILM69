@@ -95,7 +95,7 @@ setup(
         ],
     },
     extras_require={
-        "LLM": common_packages + LLM,
+        "llm": common_packages + LLM,
         "rag": common_packages + RAG,
         "speech": common_packages + SPEECH,
         "ui": UI,
