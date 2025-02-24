@@ -26,7 +26,7 @@ LLM=[
     "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
 ]
 
-linux=[
+ubuntu=[
     "flash-attn==2.7.3",
     "xformers",
     "ninja",
@@ -100,7 +100,7 @@ setup(
         "speech": common_packages + SPEECH,
         "ui": UI,
         "iot":IOT,
-        "all": common_packages + LLM + RAG + UI + SPEECH+IOT+linux+langchain,
+        "all": common_packages + ubuntu + LLM + RAG + UI + SPEECH+IOT+langchain,
         "all_win": common_packages + LLM + RAG + UI + SPEECH+IOT+langchain,
         "all_llama-cpp": common_packages + LLM + RAG + UI + SPEECH +langchain+ ["llama-cpp-python==0.3.1"]
     },
