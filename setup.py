@@ -27,10 +27,9 @@ LLM=[
 ]
 
 ubuntu=[
-    "flash-attn==2.7.3",
-    "xformers",
+    "flash-attn",
     "ninja",
-    # "bitsandbytes",
+    "xformers",
 ]
 
 RAG=[
