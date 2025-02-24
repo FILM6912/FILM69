@@ -7,7 +7,7 @@
 pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.7#egg=film69[all]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[LLM]"
+pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[llm]"
 ```
 ```sh
 pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]"
@@ -67,6 +67,8 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 
 ```
 
+
+
 #### FastVLLM
 ```python
 from FILM69.ml import FastVLLM
@@ -105,7 +107,9 @@ print(model.generate("สวัสดี",max_new_tokens=200))
 ```
 
 
-#### LLM
+<details>
+  <summary style="font-size: 15px;">LLM</summary>
+
 ```python
 from FILM69.ml.model import LLMModel
 model=LLMModel(
@@ -119,8 +123,12 @@ for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
+</details>
 
-#### LLM API
+
+<details>
+  <summary style="font-size: 15px;">LLM API</summary>
+
 ```python
 from FILM69.ml.model import LLMModel
 from openai import OpenAI
@@ -130,8 +138,12 @@ for text in model.generate("สวัสดี",stream=True,max_new_tokens=200):
     print(text,end="")
 print(model.generate("สวัสดี",max_new_tokens=200))
 ```
+</details>
 
-#### VectorDB
+
+<details>
+  <summary style="font-size: 15px;">VectorDB</summary>
+
 ```python
 from FILM69.ml.vectordb import VectorDB
 db = VectorDB()
@@ -144,8 +156,12 @@ db.query(query_texts=["Where are you going?"])
 db.get()
 db.delete(["doc1","doc2"])
 ```
+</details>
 
-#### RAG Chromadb
+
+<details>
+  <summary style="font-size: 15px;">RAG Chromadb</summary>
+
 ```python
 from FILM69.ml.llm_rag_chromadb import LlmRagChromadb
 x=LlmRagChromadb(
@@ -169,3 +185,4 @@ x=LlmRagChromadb(
         print(i,end="")
 
 ```
+</details>
