@@ -145,7 +145,6 @@ class FastVLLM:
             self.model.save_pretrained(model_name)
             self.processor.save_pretrained(model_name)
             
-        
     def trainer(self,
         max_seq_length=2048,
         learning_rate=2e-4,
