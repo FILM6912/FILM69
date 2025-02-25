@@ -5,7 +5,7 @@ from transformers import TrainingArguments,TextIteratorStreamer
 warnings.simplefilter("ignore", SyntaxWarning)
 
 from unsloth_zoo.vision_utils import process_vision_info,get_padding_tokens_ids,_get_dtype
-import torch
+import torch,json
 from unsloth import is_bf16_supported
 from trl import SFTTrainer, SFTConfig
 from threading import Thread
@@ -81,13 +81,16 @@ class FastVLLM:
         self.chat_history = []
         self.images_history=[]
     
-    def load_model(self,model_name,dtype=None,load_in_4bit=False,**kwargs): 
+    def load_model(self,model_name,dtype=None,load_in_4bit=False,load_in_8bit=False,**kwargs): 
         self.model, self.processor = FastVisionModel.from_pretrained(
             model_name = model_name,
             dtype = dtype,
             load_in_4bit = load_in_4bit,
+            load_in_8bit=load_in_8bit,
             **kwargs
         )
+        self.load_in_4bit=load_in_4bit
+        self.load_in_8bit=load_in_8bit
     
     def load_dataset(self,
             dataset,
@@ -122,8 +125,27 @@ class FastVLLM:
         self.converted_dataset=dataset
     
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
-        self.model.save_pretrained_merged(model_name, self.processor, save_method = save_method,**kwargs)
-
+        
+        if self.load_in_4bit==True or self.load_in_8bit==True:
+            try:
+                self.model.save_pretrained_merged(model_name, self.processor, save_method = save_method,**kwargs)
+            except:
+                self.load_dataset(None)
+                self.model.save_pretrained_merged(model_name, self.processor, save_method = save_method,**kwargs)
+            if save_method=="merged_16bit":
+                config=json.loads(self.model.config.to_json_string())
+                try:del config["_attn_implementation_autoset"]
+                except:...
+                try:del config["quantization_config"]
+                except:...
+                with open(f"{model_name}/config.json", "w", encoding="utf-8") as f:
+                    json.dump(config, f, indent=4, ensure_ascii=False)
+                    
+        else:
+            self.model.save_pretrained(model_name)
+            self.processor.save_pretrained(model_name)
+            
+        
     def trainer(self,
         max_seq_length=2048,
         learning_rate=2e-4,
