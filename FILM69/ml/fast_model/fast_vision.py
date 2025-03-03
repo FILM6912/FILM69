@@ -92,36 +92,7 @@ class FastVLLM:
         self.load_in_4bit=load_in_4bit
         self.load_in_8bit=load_in_8bit
     
-    def load_dataset(self,
-            dataset,
-            finetune_vision_layers     = True, # False if not finetuning vision layers
-            finetune_language_layers   = True, # False if not finetuning language layers
-            finetune_attention_modules = True, # False if not finetuning attention layers
-            finetune_mlp_modules       = True, # False if not finetuning MLP layers
-            r = 16,           # The larger, the higher the accuracy, but might overfit
-            lora_alpha = 16,  # Recommended alpha == r at least
-            lora_dropout = 0,
-            bias = "none",
-            random_state = 3407,
-            use_rslora = False,  # We support rank stabilized LoRA
-            loftq_config = None, # And LoftQ       
-        ):
-        self.model = FastVisionModel.get_peft_model(
-            self.model,
-            finetune_vision_layers     = finetune_vision_layers,
-            finetune_language_layers   = finetune_language_layers,
-            finetune_attention_modules = finetune_attention_modules,
-            finetune_mlp_modules       = finetune_mlp_modules,
-
-            r = r,           
-            lora_alpha = lora_alpha, 
-            lora_dropout = lora_dropout,
-            bias = bias,
-            random_state = random_state,
-            use_rslora = use_rslora,  
-            loftq_config = loftq_config, 
-        )
-        
+    def load_dataset(self,dataset):
         self.converted_dataset=dataset
     
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
@@ -160,8 +131,37 @@ class FastVLLM:
         report_to = "none",
         remove_unused_columns = False,
         dataset_num_proc = 4,
+        
+        finetune_vision_layers     = True, # False if not finetuning vision layers
+        finetune_language_layers   = True, # False if not finetuning language layers
+        finetune_attention_modules = True, # False if not finetuning attention layers
+        finetune_mlp_modules       = True, # False if not finetuning MLP layers
+        r = 16,           # The larger, the higher the accuracy, but might overfit
+        lora_alpha = 16,  # Recommended alpha == r at least
+        lora_dropout = 0,
+        bias = "none",
+        random_state = 3407,
+        use_rslora = False,  # We support rank stabilized LoRA
+        loftq_config = None, # And LoftQ       
         **kwargs):
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
+        self.model = FastVisionModel.get_peft_model(
+            self.model,
+            finetune_vision_layers     = finetune_vision_layers,
+            finetune_language_layers   = finetune_language_layers,
+            finetune_attention_modules = finetune_attention_modules,
+            finetune_mlp_modules       = finetune_mlp_modules,
+
+            r = r,           
+            lora_alpha = lora_alpha, 
+            lora_dropout = lora_dropout,
+            bias = bias,
+            random_state = random_state,
+            use_rslora = use_rslora,  
+            loftq_config = loftq_config, 
+        )
+        
+        
         FastVisionModel.for_training(self.model) 
 
         self._trainer = SFTTrainer(
