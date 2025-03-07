@@ -8,7 +8,7 @@ from FILM69.tts.f5_tts.model import CFM, UNetT, DiT, Trainer
 from FILM69.tts.f5_tts.model.utils import get_tokenizer
 from FILM69.tts.f5_tts.model.dataset import load_dataset
 from importlib.resources import files
-from datasets import load_dataset,Audio as _Audio
+from datasets import load_dataset as _load_dataset,Audio as _Audio
 import numpy as np
 
 from FILM69.tts.f5_tts.infer.utils_infer import (
@@ -310,7 +310,7 @@ class TTS:
         
 if __name__ == "__main__":
     x=TTS("train_tts")
-    data=load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
+    data=_load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
     data=data.rename_columns({"sentence":"text"})["train"]
     data=data.select(range(10))
     data=data.cast_column("audio",_Audio(sampling_rate=24000))
