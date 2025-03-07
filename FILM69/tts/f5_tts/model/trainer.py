@@ -406,7 +406,7 @@ class Trainer:
                             ref_mel_spec = batch["mel"][0].unsqueeze(0)
                             if self.vocoder_name == "vocos":
                                 gen_audio = vocoder.decode(gen_mel_spec).cpu()
-                                ref_audio = vocoder.decode(ref_mel_spec).cpu()
+                                ref_audio = vocoder.decode(ref_mel_spec).cpu()[:,:-(3*24000)]
                             elif self.vocoder_name == "bigvgan":
                                 gen_audio = vocoder(gen_mel_spec).squeeze(0).cpu()
                                 ref_audio = vocoder(ref_mel_spec).squeeze(0).cpu()
