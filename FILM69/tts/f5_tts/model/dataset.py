@@ -24,7 +24,12 @@ class HFDataset(Dataset):
         n_fft=1024,
         win_length=1024,
         mel_spec_type="vocos",
+        audio_column="audio",
+        text_column="text"
     ):
+        self.audio_column = audio_column
+        self.text_column = text_column
+
         self.data = hf_dataset
         self.target_sample_rate = target_sample_rate
         self.hop_length = hop_length
@@ -40,8 +45,8 @@ class HFDataset(Dataset):
 
     def get_frame_len(self, index):
         row = self.data[index]
-        audio = row["audio"]["array"]
-        sample_rate = row["audio"]["sampling_rate"]
+        audio = row[self.audio_column]["array"]
+        sample_rate = row[self.audio_column]["sampling_rate"]
         return audio.shape[-1] / sample_rate * self.target_sample_rate / self.hop_length
 
     def __len__(self):
@@ -49,11 +54,11 @@ class HFDataset(Dataset):
 
     def __getitem__(self, index):
         row = self.data[index]
-        audio = row["audio"]["array"]
+        audio = row[self.audio_column]["array"]
 
         # logger.info(f"Audio shape: {audio.shape}")
 
-        sample_rate = row["audio"]["sampling_rate"]
+        sample_rate = row[self.audio_column]["sampling_rate"]
         duration = audio.shape[-1] / sample_rate
 
         if duration > 30 or duration < 0.3:
@@ -71,7 +76,7 @@ class HFDataset(Dataset):
 
         mel_spec = mel_spec.squeeze(0)  # '1 d t -> d t'
 
-        text = row["text"]
+        text = row[self.text_column]
 
         return dict(
             mel_spec=mel_spec,
@@ -244,6 +249,8 @@ def load_dataset(
     audio_type: str = "raw",
     mel_spec_module: nn.Module | None = None,
     mel_spec_kwargs: dict = dict(),
+    audio_column="audio",
+    text_column="text"
 ) -> CustomDataset | HFDataset:
     """
     dataset_type    - "CustomDataset" if you want to use tokenizer name and default data path to load for train_dataset
@@ -299,7 +306,9 @@ def load_dataset(
         #     load_dataset(f"{pre}/{pre}", split=f"train.{post}", cache_dir=str(files("f5_tts").joinpath("../../data"))),
         # )
         train_dataset = HFDataset(
-            dataset_name
+            dataset_name,
+            audio_column=audio_column,
+            text_column=text_column
         )
 
     return train_dataset
