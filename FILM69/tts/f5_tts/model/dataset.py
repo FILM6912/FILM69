@@ -238,9 +238,9 @@ class DynamicBatchSampler(Sampler[list[int]]):
 
 
 def load_dataset(
-    dataset_name: str,
+    dataset_name,
     tokenizer: str = "pinyin",
-    dataset_type: str = "CustomDataset",
+    dataset_type: str = "HFDataset",
     audio_type: str = "raw",
     mel_spec_module: nn.Module | None = None,
     mel_spec_kwargs: dict = dict(),
@@ -294,9 +294,12 @@ def load_dataset(
             "Should manually modify the path of huggingface dataset to your need.\n"
             + "May also the corresponding script cuz different dataset may have different format."
         )
-        pre, post = dataset_name.split("_")
+        # pre, post = dataset_name.split("_")
+        # train_dataset = HFDataset(
+        #     load_dataset(f"{pre}/{pre}", split=f"train.{post}", cache_dir=str(files("f5_tts").joinpath("../../data"))),
+        # )
         train_dataset = HFDataset(
-            load_dataset(f"{pre}/{pre}", split=f"train.{post}", cache_dir=str(files("f5_tts").joinpath("../../data"))),
+            dataset_name
         )
 
     return train_dataset
