@@ -47,7 +47,8 @@ class HFDataset(Dataset):
         row = self.data[index]
         audio = row[self.audio_column]["array"]
         sample_rate = row[self.audio_column]["sampling_rate"]
-        return audio.shape[-1] / sample_rate * self.target_sample_rate / self.hop_length
+        # return audio.shape[-1] / sample_rate * self.target_sample_rate / self.hop_length
+        return (audio.shape[-1] / sample_rate) * self.target_sample_rate / self.hop_length
 
     def __len__(self):
         return len(self.data)
@@ -245,7 +246,7 @@ class DynamicBatchSampler(Sampler[list[int]]):
 def load_dataset(
     dataset_name,
     tokenizer: str = "pinyin",
-    dataset_type: str = "HFDataset",
+    dataset_type: str = "CustomDataset",
     audio_type: str = "raw",
     mel_spec_module: nn.Module | None = None,
     mel_spec_kwargs: dict = dict(),
