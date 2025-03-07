@@ -109,12 +109,23 @@ def get_tokenizer(dataset_name, tokenizer: str = "pinyin"):
     """
     if tokenizer in ["pinyin", "char"]:
         # tokenizer_path = os.path.join(files("f5_tts").joinpath("../../data"), f"{dataset_name}_{tokenizer}/vocab.txt")
-        pa=os.environ["path_data"]
-        tokenizer_path = f"{pa}/{dataset_name}_{tokenizer}/vocab.txt"
-        with open(tokenizer_path, "r", encoding="utf-8") as f:
-            vocab_char_map = {}
-            for i, char in enumerate(f):
-                vocab_char_map[char[:-1]] = i
+        # pa=os.environ["path"]
+        # tokenizer_path = f"{pa}/new_vocab.txt"
+        try:
+            pa=os.environ["path_data"]
+            tokenizer_path = f"{pa}/{dataset_name}_{tokenizer}/vocab.txt"
+            with open(tokenizer_path, "r", encoding="utf-8") as f:
+                vocab_char_map = {}
+                for i, char in enumerate(f):
+                    vocab_char_map[char[:-1]] = i
+        except:
+            pa=os.environ["path"]
+            tokenizer_path = f"{pa}/new_vocab.txt"
+            with open(tokenizer_path, "r", encoding="utf-8") as f:
+                vocab_char_map = {}
+                for i, char in enumerate(f):
+                    vocab_char_map[char[:-1]] = i
+                    
         vocab_size = len(vocab_char_map)
         assert vocab_char_map[" "] == 0, "make sure space is of idx 0 in vocab.txt, cuz 0 is used for unknown char"
 
