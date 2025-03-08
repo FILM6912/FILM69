@@ -8,7 +8,7 @@ from datasets import Dataset as Dataset_
 from datasets import load_from_disk
 from torch import nn
 from torch.utils.data import Dataset, Sampler
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from FILM69.tts.f5_tts.model.modules import MelSpec
 from FILM69.tts.f5_tts.model.utils import default
