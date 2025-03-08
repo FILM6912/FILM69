@@ -172,7 +172,8 @@ class TTS:
         # save_per_updates=3*500,
         # last_per_updates=3*500,
         epochs=10,
-        save_step=5,
+        save_step=None,
+        save_epochs=1,
         
         num_warmup_updates=0,
         keep_last_n_checkpoints=-1,
@@ -191,8 +192,12 @@ class TTS:
         n_fft = 1024,
         mel_spec_type = "vocos",  # 'vocos' or 'bigvgan'
         ):
-        save_per_updates=len(self.datasets)*save_step
-        last_per_updates=len(self.datasets)*save_step
+        if save_step != None:
+            save_per_updates=save_step
+            last_per_updates=save_step
+        else:
+            save_per_updates=len(self.datasets)*save_epochs
+            last_per_updates=len(self.datasets)*save_epochs
         
         
         os.makedirs(output+"/checkpoints", exist_ok=True)
