@@ -1,1 +1,1 @@
-from clean_text import clean_text
+from .clean_text import clean_text
