@@ -309,7 +309,6 @@ class TTS:
             resumable_with_seed=resumable_with_seed,
         )
         
-
 if __name__ == "__main__":
     x=TTS("train_tts")
     data=_load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
@@ -318,5 +317,9 @@ if __name__ == "__main__":
     data=data.cast_column("audio",_Audio(sampling_rate=24000))
 
     x.load_datasets(data)
-    x.trainer(epochs=5,save_step=5)
+    x.trainer(
+        epochs=5,
+        # save_step=5,
+        save_epochs=5,
+    )
     x.start_train()
