@@ -164,7 +164,7 @@ class TTS:
         learning_rate=1e-05,
         batch_size_per_gpu=3200,
         batch_size_type='frame',
-        max_samples=4,
+        max_samples=1,
         grad_accumulation_steps=1,
         max_grad_norm=1.0,
         
@@ -173,7 +173,6 @@ class TTS:
         # last_per_updates=3*500,
         epochs=10,
         save_step=5,
-        
         
         num_warmup_updates=0,
         keep_last_n_checkpoints=-1,
@@ -192,10 +191,8 @@ class TTS:
         n_fft = 1024,
         mel_spec_type = "vocos",  # 'vocos' or 'bigvgan'
         ):
-        save_per_updates=max_samples-1
-        last_per_updates=max_samples-1
-        save_per_updates=(max_samples-1)*save_step
-        last_per_updates=(max_samples-1)*save_step
+        save_per_updates=len(self.datasets)*save_step
+        last_per_updates=len(self.datasets)*save_step
         
         
         os.makedirs(output+"/checkpoints", exist_ok=True)
@@ -267,14 +264,14 @@ class TTS:
             mel_spec_type=mel_spec_type,
         )
 
-        model = CFM(
+        self.model = CFM(
                 transformer=model_cls(**model_cfg, text_num_embeds=vocab_size, mel_dim=n_mel_channels),
                 mel_spec_kwargs=mel_spec_kwargs,
                 vocab_char_map=vocab_char_map,
             )
 
         self._trainer = Trainer(
-                model,
+                self.model,
                 epochs,
                 learning_rate,
                 num_warmup_updates=num_warmup_updates,
@@ -301,13 +298,13 @@ class TTS:
             dataset_type="HFDataset"
             )
         
-    def start_train(self, resumable_with_seed=666,):
+    def start_train(self, resumable_with_seed=666):
         self._trainer.train(
             self.train_dataset,
             resumable_with_seed=resumable_with_seed,
         )
         
-        
+
 if __name__ == "__main__":
     x=TTS("train_tts")
     data=_load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
@@ -316,5 +313,5 @@ if __name__ == "__main__":
     data=data.cast_column("audio",_Audio(sampling_rate=24000))
 
     x.load_datasets(data)
-    x.trainer(max_samples=4,epochs=5,save_step=5)
+    x.trainer(epochs=5,save_step=5)
     x.start_train()

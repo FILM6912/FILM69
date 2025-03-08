@@ -13,14 +13,13 @@ from ema_pytorch import EMA
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LinearLR, SequentialLR
 from torch.utils.data import DataLoader, Dataset, SequentialSampler
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from FILM69.tts.f5_tts.model import CFM
 from FILM69.tts.f5_tts.model.dataset import DynamicBatchSampler, collate_fn
 from FILM69.tts.f5_tts.model.utils import default, exists
 
 # trainer
-
 
 class Trainer:
     def __init__(
@@ -406,7 +405,7 @@ class Trainer:
                             ref_mel_spec = batch["mel"][0].unsqueeze(0)
                             if self.vocoder_name == "vocos":
                                 gen_audio = vocoder.decode(gen_mel_spec).cpu()
-                                ref_audio = vocoder.decode(ref_mel_spec).cpu()[:,:-(3*24000)]
+                                ref_audio = vocoder.decode(ref_mel_spec).cpu()
                             elif self.vocoder_name == "bigvgan":
                                 gen_audio = vocoder(gen_mel_spec).squeeze(0).cpu()
                                 ref_audio = vocoder(ref_mel_spec).squeeze(0).cpu()
