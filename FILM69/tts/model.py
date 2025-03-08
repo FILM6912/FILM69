@@ -10,6 +10,7 @@ from FILM69.tts.f5_tts.model.dataset import load_dataset
 from importlib.resources import files
 from datasets import load_dataset as _load_dataset,Audio as _Audio
 import numpy as np
+from tqdm.autonotebook import trange
 
 from FILM69.tts.f5_tts.infer.utils_infer import (
     mel_spec_type,
@@ -84,8 +85,8 @@ class TTS:
 
         miss_symbols = []
         miss_symbols_keep = {}
-        for i in datasets:
-            text=i["text"]
+        for i in trange(len(datasets),desc="Checking vocab"):
+            text=datasets[i]["text"]
             for t in text:
                 if t not in vocab and t not in miss_symbols_keep:
                     miss_symbols.append(t)
@@ -162,7 +163,7 @@ class TTS:
         exp_name='F5TTS_Base',
         dataset_name='tha',
         learning_rate=1e-05,
-        batch_size_per_gpu=3200,
+        batch_size_per_gpu=50000,
         batch_size_type='frame',
         max_samples=1,
         grad_accumulation_steps=1,
@@ -176,14 +177,14 @@ class TTS:
         save_epochs=1,
         
         num_warmup_updates=0,
-        keep_last_n_checkpoints=-1,
+        keep_last_n_checkpoints=5,
         finetune=True,
         pretrain=None,
-        tokenizer='pinyin',
+        tokenizer='char',
         tokenizer_path=None,
         log_samples=True,
         logger='tensorboard',
-        bnb_optimizer=False,
+        bnb_optimizer=True,
         
         target_sample_rate = 24000,
         n_mel_channels = 100,
@@ -309,6 +310,7 @@ class TTS:
             resumable_with_seed=resumable_with_seed,
         )
         
+
 if __name__ == "__main__":
     x=TTS("train_tts")
     data=_load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
@@ -323,3 +325,4 @@ if __name__ == "__main__":
         save_epochs=5,
     )
     x.start_train()
+    
