@@ -192,6 +192,8 @@ class TTS:
         win_length = 1024,
         n_fft = 1024,
         mel_spec_type = "vocos",  # 'vocos' or 'bigvgan'
+        
+        check_vocab=True,
         ):
         if save_step != None:
             save_per_updates=save_step
@@ -200,17 +202,17 @@ class TTS:
             save_per_updates=len(self.datasets)*save_epochs
             last_per_updates=len(self.datasets)*save_epochs
         
-        
         os.makedirs(output+"/checkpoints", exist_ok=True)
         if not os.path.exists(f"{output}/old_vocab.txt"):
             os.makedirs(os.path.dirname(f"{output}/old_vocab.txt"), exist_ok=True)
             with open(f"{output}/old_vocab.txt", "wb") as f:
                 f.write(requests.get("https://raw.githubusercontent.com/WATCHARAPHON6912/FILM69/refs/heads/main/data/Emilia_ZH_EN_pinyin/vocab.txt").content)
         
-        info,new_vocab=self.vocab_check(self.datasets,f"{output}/old_vocab.txt")
-        
-        info_extend=self.vocab_extend(output,new_vocab,model_type)
-        print(info_extend)
+        if check_vocab:
+            info,new_vocab=self.vocab_check(self.datasets,f"{output}/old_vocab.txt")
+            info_extend=self.vocab_extend(output,new_vocab,model_type)
+            print(info_extend)
+        else:print("Not check vocab")
         
         os.environ["path"]=output
         
