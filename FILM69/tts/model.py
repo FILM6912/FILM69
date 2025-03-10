@@ -8,7 +8,7 @@ from FILM69.tts.f5_tts.model import CFM, UNetT, DiT, Trainer
 from FILM69.tts.f5_tts.model.utils import get_tokenizer
 from FILM69.tts.f5_tts.model.dataset import load_dataset
 from importlib.resources import files
-from datasets import load_dataset as _load_dataset,Audio as _Audio
+from datasets import load_dataset as _load_dataset,Audio as _Audio,concatenate_datasets
 import numpy as np
 from tqdm.autonotebook import trange
 
@@ -314,17 +314,30 @@ class TTS:
         
 
 if __name__ == "__main__":
-    x=TTS("train_tts")
-    data=_load_dataset("FILM6912/STT-v2",cache_dir="datasets_au")
-    data=data.rename_columns({"sentence":"text"})["train"]
-    data=data.select(range(10))
-    data=data.cast_column("audio",_Audio(sampling_rate=24000))
-
-    x.load_datasets(data)
-    x.trainer(
-        epochs=5,
-        # save_step=5,
-        save_epochs=5,
-    )
-    x.start_train()
+    x=TTS()
     
+    data=load_dataset("FILM6912/STT-v2")
+    data=data.rename_columns({"sentence":"text"})
+    data=concatenate_datasets([data["train"],data["test"]])
+    data=data.cast_column("audio",_Audio(sampling_rate=24000))
+    
+    x.load_datasets(data)
+    
+    x.trainer(
+        exp_name='F5TTS_Base',
+        learning_rate=1e-05,
+        batch_size_per_gpu=10000, #24GB Vram
+        batch_size_type='frame',
+        max_samples=64,
+        grad_accumulation_steps=1,
+        max_grad_norm=1,
+        epochs=20,
+        num_warmup_updates= 405764,
+        save_step=811528,
+        keep_last_n_checkpoints=5,
+        last_per_updates=10000,
+        finetune=True,
+        check_vocab=False
+    )
+    
+    x.start_train()
