@@ -11,7 +11,9 @@ common_packages = [
     "sentence-transformers",
     "ipywidgets",
     "plotly",
-    "matplotlib"
+    "matplotlib",
+    "cached-path",
+    "gradio"
 ]
 
 LLM=[
@@ -41,7 +43,7 @@ UI=[
     "streamlit",
     "stqdm",
     "ipywidgets",
-    "gradio",
+  
 ]
 
 SPEECH=[
