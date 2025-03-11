@@ -269,7 +269,7 @@ class FastLLM:
             if history_save:self.chat_history.append({"role": "assistant","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],save_original_model=False,**kwargs):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,**kwargs):
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
         source_directory = Path(model_name)
@@ -288,7 +288,7 @@ class FastLLM:
                 item_path = os.path.join(model_name, item)
                 if os.path.isfile(item_path):os.remove(item_path)
 
-    def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q3_k_l","q4_k_m","q5_k_m","q8_0","f16"],token="",**kwargs):
+    def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],token="",**kwargs):
         self.model.push_to_hub_gguf(
         model_name, 
         self.tokenizer,
