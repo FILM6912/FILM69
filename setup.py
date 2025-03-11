@@ -25,6 +25,7 @@ LLM=[
     "trl",
     "peft",
     "huggingface-hub",
+    "langchain-core",
     "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
 ]
 
