@@ -1,2 +1,1 @@
-try:from .model import TTS
-except:...
+from .model import TTS
