@@ -1,3 +1,3 @@
-from ..dis_print import dis_print
+from ..DisPrint import dis_print
 with dis_print():
     from .model import TTS
