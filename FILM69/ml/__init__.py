@@ -15,3 +15,5 @@ except:pass
 
 from .convert_to_gguf import convert_to_gguf
 from .langchain import LangChainFastLLM
+from .requires_memory import requires_memory
+
