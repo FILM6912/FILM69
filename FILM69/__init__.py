@@ -1,6 +1,6 @@
 import warnings
 warnings.simplefilter("ignore", UserWarning)
-from .dis_print import dis_print
+from .DisPrint import dis_print
 
 with dis_print():
     try:from .ml import *
