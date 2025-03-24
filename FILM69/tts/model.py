@@ -19,7 +19,7 @@ from FILM69.tts.f5_tts.infer.utils_infer import (
     nfe_step,
     cfg_strength,
     sway_sampling_coef,
-    speed,
+    # speed,
     fix_duration,
     infer_process,
     load_model,
@@ -55,7 +55,7 @@ class TTS:
         
         return load_model(DiT, model_cfg, ckpt_path,vocab_file=vocab_file,device=device)
         
-    def predict(self,ref_audio,ref_text:str,gen_text:str,vocoder_name = "vocos"):
+    def predict(self,ref_audio,ref_text:str,gen_text:str,vocoder_name = "vocos",speed=1):
         audio_segment, sr, spectragram = infer_process(
             ref_audio,
             ref_text,
@@ -68,7 +68,7 @@ class TTS:
             nfe_step=nfe_step,
             cfg_strength=cfg_strength,
             sway_sampling_coef=sway_sampling_coef,
-            speed=1,
+            speed=speed,
             fix_duration=fix_duration,
         )
         
