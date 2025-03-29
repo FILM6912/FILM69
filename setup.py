@@ -14,7 +14,8 @@ common_packages = [
     "matplotlib",
     "cached-path",
     "gradio",
-    "streamlit"
+    "streamlit",
+    "flet"
 ]
 
 LLM=[
@@ -80,6 +81,11 @@ langchain=[
     "langchain-core"
 ]
 
+IMAGES=[
+    "labelme",
+    "ultralytics"
+    ]
+
 setup(
     name="film69",
     version="0.4.8",
@@ -100,6 +106,7 @@ setup(
         "speech": common_packages + SPEECH,
         "ui": UI,
         "iot":IOT,
+        "images":IMAGES,
         "all": common_packages + ubuntu + LLM + RAG + UI + SPEECH+IOT+langchain,
         "all_win": common_packages + LLM + RAG + UI + SPEECH+IOT+langchain,
         "all_llama-cpp": common_packages + LLM + RAG + UI + SPEECH +langchain+ ["llama-cpp-python==0.3.1"]
