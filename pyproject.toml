@@ -1,0 +1,112 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "film69"
+version = "0.4.8"
+description = ""
+authors = [
+    {name = "Watcharaphon Pamayayang", email = "filmmagic45@gmail.com"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "setuptools",
+    "transformers>=4.44.2",
+    "numpy",
+    "pandas",
+    "openpyxl",
+    "openai",
+    "sentence-transformers",
+    "ipywidgets",
+    "plotly",
+    "matplotlib",
+    "cached-path",
+    "gradio",
+    "streamlit"
+]
+
+[project.optional-dependencies]
+llm = [
+    "datasets",
+    "sentencepiece",
+    "tqdm",
+    "psutil",
+    "accelerate",
+    "trl",
+    "peft",
+    "huggingface-hub",
+    "langchain-core",
+    "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+]
+
+ubuntu = [
+    "flash-attn",
+    "ninja",
+    "xformers"
+]
+
+rag = [
+    "pymilvus",
+    "chromadb"
+]
+
+ui = [
+    "stqdm",
+    "ipywidgets"
+]
+
+speech = [
+    "datasets>=2.6.1",
+    "librosa",
+    "evaluate==0.4.3",
+    "jiwer",
+    "accelerate",
+    "cached_path",
+    "ema_pytorch>=0.5.2",
+    "hydra-core>=1.3.0",
+    "jieba",
+    "pydub",
+    "pypinyin",
+    "safetensors",
+    "soundfile",
+    "tomli",
+    "torchaudio",
+    "torchdiffeq",
+    "transformers_stream_generator",
+    "vocos",
+    "wandb",
+    "x_transformers>=1.31.14",
+    "click"
+]
+
+iot = [
+    "minimalmodbus"
+]
+
+langchain = [
+    "langchain",
+    "langchain-ollama",
+    "langchain-openai",
+    "langgraph",
+    "langchain-core"
+]
+
+images = [
+    "labelme",
+    "ultralytics"
+]
+
+all = dependencies + ubuntu + llm + rag + ui + speech + iot + langchain
+all_win = dependencies + llm + rag + ui + speech + iot + langchain
+all_llama_cpp = dependencies + llm + rag + ui + speech + langchain + ["llama-cpp-python"]
+
+[project.scripts]
+tts = "FILM69.tts.f5_tts.infer.infer_cli:main"
+tts_train_ui = "FILM69.tts.f5_tts.train.finetune_gradio:main"
+
+[tool.setuptools]
+packages = ["film69"]
+
+[tool.setuptools.packages.find]
+where = ["."]
