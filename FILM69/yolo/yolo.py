@@ -11,7 +11,7 @@ class Couting:
         self.counter = solutions.ObjectCounter(show=False,region=region_points, model=model,verbose=verbose,**kwargs)
     
     def predict(self,img,**kwargs):
-        org_img=img.copy()
+        org_img=img
         results=self.counter.process(img,**kwargs)
         return org_img,results.plot_im,results
     
@@ -31,7 +31,7 @@ class Tracking:
         self.track_history = defaultdict(lambda: [])
         
     def predict(self,img,track_frame=30,color=(255, 0, 0),thickness=5,**kwargs):
-        org_img=img.copy()
+        org_img=img
         result = self.model.track(img, persist=True,verbose=self.verbose,**kwargs)[0]
         
         if result.boxes and result.boxes.id is not None:
@@ -61,7 +61,7 @@ class Detect:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
-        org_img=img.copy()
+        org_img=img
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
         return org_img,results[0].plot(),results
@@ -76,7 +76,7 @@ class Segmentation:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
-        org_img=img.copy()
+        org_img=img
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
         return org_img,results[0].plot(),results
@@ -91,7 +91,7 @@ class Pose:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
-        org_img=img.copy()
+        org_img=img
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
         return org_img,results[0].plot(),results
