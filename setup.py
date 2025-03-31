@@ -107,9 +107,9 @@ setup(
         "ui": UI,
         "iot":IOT,
         "images":IMAGES,
-        "all": common_packages + ubuntu + LLM + RAG + UI + SPEECH+IOT+langchain,
-        "all_win": common_packages + LLM + RAG + UI + SPEECH+IOT+langchain,
-        "all_llama-cpp": common_packages + LLM + RAG + UI + SPEECH +langchain+ ["llama-cpp-python==0.3.1"]
+        "all": common_packages + ubuntu + LLM + RAG + UI + SPEECH + IOT + langchain + IMAGES,
+        "all_win": common_packages + LLM + RAG + UI + SPEECH + IOT + langchain + IMAGES,
+        "all_llama-cpp": common_packages + LLM + RAG + UI + SPEECH + langchain + ["llama-cpp-python"] + IMAGES
     },
     classifiers=[
         "Programming Language :: Python :: 3",
