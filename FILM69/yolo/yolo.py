@@ -11,8 +11,9 @@ class Couting:
         self.counter = solutions.ObjectCounter(show=False,region=region_points, model=model,verbose=verbose,**kwargs)
     
     def predict(self,img,**kwargs):
+        org_img=img.copy()
         results=self.counter.process(img,**kwargs)
-        return img,results.plot_im,results
+        return org_img,results.plot_im,results
     
     def reset_count(self):
         self.counter.in_count = 0  
@@ -30,6 +31,7 @@ class Tracking:
         self.track_history = defaultdict(lambda: [])
         
     def predict(self,img,track_frame=30,color=(255, 0, 0),thickness=5,**kwargs):
+        org_img=img.copy()
         result = self.model.track(img, persist=True,verbose=self.verbose,**kwargs)[0]
         
         if result.boxes and result.boxes.id is not None:
@@ -47,7 +49,7 @@ class Tracking:
                 points = np.hstack(track).astype(np.int32).reshape((-1, 1, 2))
                 cv2.polylines(frame, [points], isClosed=False, color=(color[2], color[1], color[0]), thickness=thickness)
         
-        return img,frame,result
+        return org_img,frame,result
     
     def reset_track(self):
         self.track_history = defaultdict(lambda: [])
@@ -59,9 +61,10 @@ class Detect:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
+        org_img=img.copy()
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
-        return img,results[0].plot(),results
+        return org_img,results[0].plot(),results
         
     def train(self,data="da/data.yaml", epochs=50, image_size=640,**kwargs):
         return self.model.train(data=data, epochs=epochs, imgsz=image_size,**kwargs)
@@ -73,9 +76,10 @@ class Segmentation:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
+        org_img=img.copy()
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
-        return img,results[0].plot(),results
+        return org_img,results[0].plot(),results
         
     def train(self,data="da/data.yaml", epochs=50, image_size=640,**kwargs):
         return self.model.train(data=data, epochs=epochs, imgsz=image_size,**kwargs)
@@ -87,9 +91,10 @@ class Pose:
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
     def predict(self,img,**kwargs):
+        org_img=img.copy()
         results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
-        return img,results[0].plot(),results
+        return org_img,results[0].plot(),results
     
     def plot(self,img,results,map_point):
         """"
