@@ -1,4 +1,6 @@
 from ..DisPrint import dis_print
+import warnings
+warnings.simplefilter("ignore", UserWarning)
 with dis_print():
     from .model import LLMModel
     try:from .vectordb import VectorDB
