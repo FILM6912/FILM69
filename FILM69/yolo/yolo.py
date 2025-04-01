@@ -3,9 +3,11 @@ from ultralytics import solutions
 from collections import defaultdict
 from ultralytics import YOLO
 import numpy as np
+from typing import Literal,Union
+from pydantic import validate_call
 
 class Couting:
-    def __init__(self,model="yolo11x.pt",region_points=list[tuple],verbose=False,**kwargs):
+    def __init__(self,model:str="yolo11x.pt",region_points=list[tuple],verbose:bool=False,**kwargs):
         "region_points=[(610, 500),(600, 500),(600, 0),(610, 0)]"
         
         self.counter = solutions.ObjectCounter(show=False,region=region_points, model=model,verbose=verbose,**kwargs)
@@ -25,14 +27,13 @@ class Couting:
         self.counter.region_initialized = False
         return "reset_count_success"
     
-    
 class Tracking:
-    def __init__(self,model="yolo11x.pt",verbose=False,**kwargs):
+    def __init__(self,model:str="yolo11x.pt",verbose:bool=False,**kwargs):
         self.verbose=verbose
         self.model = YOLO(model,**kwargs)
         self.track_history = defaultdict(lambda: [])
-        
-    def predict(self,img,track_frame=30,color=(255, 0, 0),thickness=5,**kwargs):
+    
+    def predict(self,img,track_frame:int=30,color:tuple=(255, 0, 0),thickness:int=5,**kwargs):
         img=img.copy()
         org_img=img
         result = self.model.track(img, persist=True,verbose=self.verbose,**kwargs)[0]
@@ -59,10 +60,10 @@ class Tracking:
         return "reset_track_success"
 
 class Detect:
-    def __init__(self,model="yolo11x.pt",verbose=False,**kwargs):
+    def __init__(self,model:str="yolo11x.pt",verbose:bool=False,**kwargs):
         self.verbose=verbose
         self.model = YOLO(model,verbose=verbose,**kwargs)
-        
+    
     def predict(self,img,**kwargs):
         img=img.copy()
         org_img=img
@@ -70,12 +71,13 @@ class Detect:
         
         return org_img,results[0].plot(),results
         
-    def train(self,data="da/data.yaml", epochs=50, image_size=640,**kwargs):
-        return self.model.train(data=data, epochs=epochs, imgsz=image_size,**kwargs)
+    @validate_call
+    def train(self,data:str="da/data.yaml", epochs:int=50, image_size:int=640,device: Union[int, list[int], Literal["cpu"]]=0,**kwargs):
+        return self.model.train(data=data, epochs=epochs, imgsz=image_size,device=device,**kwargs)
 
 
 class Segmentation:
-    def __init__(self,model="yolo11x-seg.pt",verbose=False,**kwargs):
+    def __init__(self,model:str="yolo11x-seg.pt",verbose:bool=False,**kwargs):
         self.verbose=verbose
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
@@ -86,12 +88,13 @@ class Segmentation:
         
         return org_img,results[0].plot(),results
         
-    def train(self,data="da/data.yaml", epochs=50, image_size=640,**kwargs):
-        return self.model.train(data=data, epochs=epochs, imgsz=image_size,**kwargs)
+    @validate_call
+    def train(self,data:str="da/data.yaml", epochs:int=50, image_size:int=640,device: Union[int, list[int], Literal["cpu"]]=0,**kwargs):
+        return self.model.train(data=data, epochs=epochs, imgsz=image_size,device=device,**kwargs)
             
             
 class Pose:
-    def __init__(self,model="yolo11x-pose.pt",verbose=False,**kwargs):
+    def __init__(self,model:str="yolo11x-pose.pt",verbose:bool=False,**kwargs):
         self.verbose=verbose
         self.model = YOLO(model,verbose=verbose,**kwargs)
         
@@ -127,6 +130,7 @@ class Pose:
             
             return img
         
-    def train(self,data="da/data.yaml", epochs=50, image_size=640,**kwargs):
-        return self.model.train(data=data, epochs=epochs, imgsz=image_size,**kwargs)
+    @validate_call
+    def train(self,data:str="da/data.yaml", epochs:int=50, image_size:int=640,device: Union[int, list[int], Literal["cpu"]]=0,**kwargs):
+        return self.model.train(data=data, epochs=epochs, imgsz=image_size,device=device,**kwargs)
         
