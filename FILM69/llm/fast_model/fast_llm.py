@@ -269,7 +269,8 @@ class FastLLM:
             if history_save:self.chat_history.append({"role": "assistant","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,**kwargs):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,max_size_gguf=49,build_gpu=False,**kwargs):
+        
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
         source_directory = Path(model_name)
@@ -287,6 +288,51 @@ class FastLLM:
             for item in os.listdir(model_name):
                 item_path = os.path.join(model_name, item)
                 if os.path.isfile(item_path):os.remove(item_path)
+                
+        # move folder
+        folder_path = f"{model_name}/GGUF"
+        files_path,files_size = self.__check_file__(folder_path)
+
+        if max(files_size) > max_size_gguf:
+            for i in files_path:
+                new_path = os.path.join(folder_path, i.split('.')[-2])
+                os.makedirs(new_path, exist_ok=True)
+                shutil.move(i, os.path.join(new_path, i.split('/')[-1]))
+        
+        # build llama.cpp
+        if os.system("./llama.cpp/llama-gguf-split") != 256:
+            build_gpu_command="-DGGML_CUDA=ON"
+            command=f"""
+                cd llama.cpp && \
+                cmake -B build {build_gpu_command if build_gpu else ''} && \
+                cmake --build build --config Release && \
+                cp build/bin/llama-* .
+                """
+            os.system(command)
+        
+        # split gguf
+        files_path,files_size = self.__check_file__(folder_path)
+        for i in range(len(files_path)):
+            if files_size[i] > max_size_gguf:
+                command=f"""./llama.cpp/llama-gguf-split --split \
+                    --split-max-size {max_size_gguf}G \
+                    {files_path[i]} {files_path[i][:-5]}
+                """
+                os.system(command)
+                os.remove(files_path[i])
+        
+    def __check_file__(self,path):
+        files_path = []
+        files_size = []
+        for root, dirs, files in os.walk(path):
+            for filename in files:
+                    file_path = os.path.join(root, filename)
+                    file_size = os.path.getsize(file_path)
+                    file_size_gb = file_size / (1024 ** 3)
+                    files_path.append(file_path)
+                    files_size.append(file_size_gb)
+        return files_path,files_size
+        
 
     def export_GGUF_push_to_hub(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],token="",**kwargs):
         self.model.push_to_hub_gguf(
