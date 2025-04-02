@@ -269,7 +269,7 @@ class FastLLM:
             if history_save:self.chat_history.append({"role": "assistant","content": text_out})
             return text_out
         
-    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,max_size_gguf="49G",build_gpu=False,**kwargs):
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,max_size_gguf="49G",build_gpu=False,save_original_gguf=False,**kwargs):
         
         FastLanguageModel.for_inference(self.model)
         self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
@@ -320,7 +320,8 @@ class FastLLM:
                     {files_path[i]} {files_path[i][:-5]}
                 """
                 os.system(command)
-                os.remove(files_path[i])
+                if not save_original_gguf:
+                    os.remove(files_path[i])
                 
     def _convert_to_gb(self,size_str):
         unit_multipliers = {
