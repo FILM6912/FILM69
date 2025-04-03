@@ -30,7 +30,7 @@ class FastModel:
     
     def load_dataset(self,dataset):
         self.converted_dataset=dataset
-        self.model = FastModel.get_peft_model(
+        self.model = _FastModel.get_peft_model(
             self.model,
             finetune_vision_layers     = False, # Turn off for just text!
             finetune_language_layers   = True,  # Should leave on!
