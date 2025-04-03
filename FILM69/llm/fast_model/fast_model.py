@@ -11,71 +11,7 @@ from trl import SFTTrainer, SFTConfig
 from threading import Thread
 from PIL import Image
 from datasets import load_dataset
-
-class DataCollator:
-    __slots__ = "padding_token_ids", "dtype", "ignore_index", "processor"
-
-    def __init__(self, model, processor, ignore_index = -100):
-        self.padding_token_ids = get_padding_tokens_ids(processor)
-        self.dtype = _get_dtype(
-            model.config.torch_dtype \
-            if hasattr(model.config, "torch_dtype") else \
-            model.get_input_embeddings().weight.dtype
-        )
-        self.ignore_index = ignore_index
-        self.processor = processor
-        return
-
-    def __call__(self, examples):
-    
-        texts  = []
-        images = []
-        for example in examples:
-            messages = example["messages"]
-            message = self.processor.apply_chat_template(
-                messages,
-                tokenize = False,
-                add_generation_prompt = False,
-            )
-    
-            if "images" in example:
-                image = example["images"][0]
-            else:
-                image, video = process_vision_info(messages)
-            texts .append(message)
-            if image !=None:
-                images.append(image)
-
-        batch = self.processor(
-            text    = texts,
-            images  = None if images==[] else images,
-            padding = True,
-            # truncation = True,
-            return_tensors = "pt",
-        )
-        batch.pop("token_type_ids", None)
-        
-        if images!=[]:
-            pixel_values = batch["pixel_values"]
-            if type(pixel_values) is list:
-                for j, pixel_value_j in enumerate(pixel_values):
-                    if type(pixel_value_j) is list:
-                        for k, pixel_value_k in enumerate(pixel_value_j):
-                            pixel_value_j[k] = pixel_value_k.to(self.dtype)
-                    else:
-                        pixel_values[j] = pixel_value_j.to(self.dtype)
-                pass
-                batch["pixel_values"] = pixel_values
-            else:
-                batch["pixel_values"] = batch["pixel_values"].to(self.dtype)
-            pass
-
-        labels = batch["input_ids"].clone()
-        labels[torch.isin(labels, self.padding_token_ids)] = self.ignore_index
-        batch["labels"] = labels
-        return batch
-
-
+from unsloth import UnslothVisionDataCollator
 class FastModel:
     def __init__(self) -> None:
         self.chat_history = []
@@ -161,13 +97,12 @@ class FastModel:
             loftq_config = loftq_config, 
         )
         
-        
         _FastModel.for_training(self.model) 
 
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.processor,
-            data_collator = DataCollator(self.model, self.processor), # Must use!
+            data_collator = UnslothVisionDataCollator(self.model, self.processor),
             # data_collator = DataCollator(self.model, self.processor), # Must use!
             train_dataset = self.converted_dataset,
             callbacks=callbacks,
@@ -300,7 +235,7 @@ class FastModel:
 
 if __name__ == "__main__":
     model = FastModel()
-    model.load_model("Llama-3.2-11B-Vision-Instruct",load_in_4bit=True)
+    model.load_model("unsloth/gemma-3-4b-it",load_in_4bit=True)
     dataset = load_dataset("unsloth/Radiology_mini", split = "train")
     dataset=dataset.select(range(5))
 
