@@ -78,7 +78,11 @@ class FastModel:
         bias = "none",
         random_state = 3407,
         use_rslora = False,  # We support rank stabilized LoRA
-        loftq_config = None, # And LoftQ       
+        loftq_config = None, # And LoftQ    
+        
+        train_on_responses_only = False,
+        instruction_part = "<|start_header_id|>user<|end_header_id|>\n\n",
+        response_part = "<|start_header_id|>assistant<|end_header_id|>\n\n",   
         **kwargs):
         "trainer(self,max_seq_length=1024,max_step=60 or num_train_epochs=3,learning_rate=2e-4,output_dir = 'outputs',callbacks=None)"
         self.model = _FastModel.get_peft_model(
@@ -102,7 +106,13 @@ class FastModel:
         self._trainer = SFTTrainer(
             model = self.model,
             tokenizer = self.processor,
-            data_collator = UnslothVisionDataCollator(self.model, self.processor),
+            data_collator = UnslothVisionDataCollator(
+                    self.model,
+                    self.processor,
+                    train_on_responses_only = train_on_responses_only,
+                    instruction_part = instruction_part,
+                    response_part = response_part,
+                ),
             # data_collator = DataCollator(self.model, self.processor), # Must use!
             train_dataset = self.converted_dataset,
             callbacks=callbacks,
