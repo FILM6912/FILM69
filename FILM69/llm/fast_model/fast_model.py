@@ -30,6 +30,19 @@ class FastModel:
     
     def load_dataset(self,dataset):
         self.converted_dataset=dataset
+        self.model = FastModel.get_peft_model(
+            self.model,
+            finetune_vision_layers     = False, # Turn off for just text!
+            finetune_language_layers   = True,  # Should leave on!
+            finetune_attention_modules = True,  # Attention good for GRPO
+            finetune_mlp_modules       = True,  # SHould leave on always!
+
+            r = 8,           # Larger = higher accuracy, but might overfit
+            lora_alpha = 8,  # Recommended alpha == r at least
+            lora_dropout = 0,
+            bias = "none",
+            random_state = 3407,
+        )
     
     def save_model(self,model_name,save_method = "merged_16bit",**kwargs):
         
