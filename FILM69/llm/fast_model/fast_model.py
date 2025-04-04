@@ -1,7 +1,7 @@
-import warnings,os,sys
+import warnings,os,shutil
 from unsloth import FastModel as _FastModel
 from transformers import TrainingArguments,TextIteratorStreamer
-
+from pathlib import Path
 warnings.simplefilter("ignore", SyntaxWarning)
 
 from unsloth_zoo.vision_utils import process_vision_info,get_padding_tokens_ids,_get_dtype
@@ -241,7 +241,83 @@ class FastModel:
             if history_save:self.chat_history.append({ "role" : "assistant","content" : [{"type":"text","text": text_out}]})
 
             return text_out
+        
+    def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,max_size_gguf="49G",build_gpu=False,save_original_gguf=False,**kwargs):
+        
+        _FastModel.for_inference(self.model)
+        self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
+        source_directory = Path(model_name)
+        gguf_directory = source_directory / 'GGUF'
+        max_size_gguf=max_size_gguf.upper()
 
+        gguf_directory.mkdir(exist_ok=True)
+        for file_path in source_directory.rglob('*unsloth*'):
+            if file_path.is_file():
+                new_file_name = file_path.name.replace('unsloth', model_name)
+                new_file_path = gguf_directory / str(new_file_name).split("/")[-1]
+                shutil.move(str(file_path), str(new_file_path))
+                print(f'saved {new_file_path}')
+
+        if not save_original_model:
+            for item in os.listdir(model_name):
+                item_path = os.path.join(model_name, item)
+                if os.path.isfile(item_path):os.remove(item_path)
+                
+        # move folder
+        folder_path = f"{model_name}/GGUF"
+        files_path,files_size = self.__check_file__(folder_path)
+
+        if max(files_size) > self._convert_to_gb(max_size_gguf):
+            for i in files_path:
+                new_path = os.path.join(folder_path, i.split('.')[-2])
+                os.makedirs(new_path, exist_ok=True)
+                shutil.move(i, os.path.join(new_path, i.split('/')[-1]))
+        
+        # build llama.cpp
+        if os.system("./llama.cpp/llama-gguf-split") != 256:
+            build_gpu_command="-DGGML_CUDA=ON"
+            command=f"""
+                cd llama.cpp && \
+                cmake -B build {build_gpu_command if build_gpu else ''} && \
+                cmake --build build --config Release && \
+                cp build/bin/llama-* .
+                """
+            os.system(command)
+        
+        # split gguf
+        files_path,files_size = self.__check_file__(folder_path)
+        for i in range(len(files_path)):
+            if files_size[i] > self._convert_to_gb(max_size_gguf):
+                command=f"""./llama.cpp/llama-gguf-split --split \
+                    --split-max-size {max_size_gguf}\
+                    {files_path[i]} {files_path[i][:-5]}
+                """
+                os.system(command)
+                if not save_original_gguf:
+                    os.remove(files_path[i])
+
+    def _convert_to_gb(self,size_str):
+        unit_multipliers = {
+            'M': 1 / 1024,
+            'G': 1          
+        }
+
+        num = float(size_str[:-1])
+        unit = size_str[-1]
+        
+        return num * unit_multipliers.get(unit, 1)
+
+    def __check_file__(self,path):
+        files_path = []
+        files_size = []
+        for root, dirs, files in os.walk(path):
+            for filename in files:
+                    file_path = os.path.join(root, filename)
+                    file_size = os.path.getsize(file_path)
+                    file_size_gb = file_size / (1024 ** 3)
+                    files_path.append(file_path)
+                    files_size.append(file_size_gb)
+        return files_path,files_size
 
 if __name__ == "__main__":
     model = FastModel()
