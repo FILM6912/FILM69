@@ -245,7 +245,7 @@ class FastModel:
     def export_to_GGUF(self,model_name="model",quantization_method= ["q4_k_m","q8_0","f16"],save_original_model=False,max_size_gguf="49G",build_gpu=False,save_original_gguf=False,**kwargs):
         
         _FastModel.for_inference(self.model)
-        self.model.save_pretrained_gguf(model_name, self.tokenizer, quantization_method = quantization_method,**kwargs)
+        self.model.save_pretrained_gguf(model_name, self.processor, quantization_method = quantization_method,**kwargs)
         source_directory = Path(model_name)
         gguf_directory = source_directory / 'GGUF'
         max_size_gguf=max_size_gguf.upper()
@@ -262,7 +262,7 @@ class FastModel:
             for item in os.listdir(model_name):
                 item_path = os.path.join(model_name, item)
                 if os.path.isfile(item_path):os.remove(item_path)
-                
+        
         # move folder
         folder_path = f"{model_name}/GGUF"
         files_path,files_size = self.__check_file__(folder_path)
@@ -325,14 +325,12 @@ if __name__ == "__main__":
     dataset = load_dataset("unsloth/Radiology_mini", split = "train")
     dataset=dataset.select(range(5))
 
-    instruction = "You are an expert radiographer. Describe accurately what you see in this image."
-
     def convert_to_conversation(sample):
         conversation = [
             { "role": "user",
             "content" : [
-                # {"type" : "text",  "text"  : "สวัสดี"},
-                {"type" : "image", "image" : sample["image"]} 
+                {"type" : "image", "image" : sample["image"]},
+                {"type" : "text",  "text"  : "สวัสดี"},
                 ]
             },
             { "role" : "assistant",
