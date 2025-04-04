@@ -119,9 +119,7 @@ class FastModel:
         random_state=3407,
         use_rslora=False,
         loftq_config=None,
-        train_on_responses_only=False,
-        instruction_part="<|start_header_id|>user<|end_header_id|>\n\n",
-        response_part="<|start_header_id|>assistant<|end_header_id|>\n\n",
+        data_collator=None,
         **kwargs
     ):
         """Configures the SFTTrainer for fine-tuning.
@@ -171,17 +169,20 @@ class FastModel:
             use_rslora=use_rslora,
             loftq_config=loftq_config,
         )
+        
+        if data_collator == None:
+            data_collator = UnslothVisionDataCollator(
+                self.model,
+                self.processor,
+                train_on_responses_only=False,
+                instruction_part="<|start_header_id|>user<|end_header_id|>\n\n",
+                response_part="<|start_header_id|>assistant<|end_header_id|>\n\n",
+            )
 
         self._trainer = SFTTrainer(
             model=self.model,
             tokenizer=self.processor,
-            data_collator=UnslothVisionDataCollator(
-                self.model,
-                self.processor,
-                train_on_responses_only=train_on_responses_only,
-                instruction_part=instruction_part,
-                response_part=response_part,
-            ),
+            data_collator=data_collator,
             train_dataset=self.converted_dataset,
             callbacks=callbacks,
             args=SFTConfig(

@@ -1,5 +1,5 @@
 import warnings
-from unsloth import FastVisionModel
+from unsloth import FastVisionModel,UnslothVisionDataCollator
 from transformers import TrainingArguments, TextIteratorStreamer
 from unsloth_zoo.vision_utils import process_vision_info, get_padding_tokens_ids, _get_dtype
 import torch
@@ -12,65 +12,6 @@ from datasets import load_dataset
 
 
 warnings.simplefilter("ignore", SyntaxWarning)
-
-
-class DataCollator:
-    """
-    Collates data for training, handling text and images.
-    """
-
-    def __init__(self, model, processor, ignore_index=-100):
-        self.padding_token_ids = get_padding_tokens_ids(processor)
-        self.dtype = _get_dtype(
-            model.config.torch_dtype
-            if hasattr(model.config, "torch_dtype")
-            else model.get_input_embeddings().weight.dtype
-        )
-        self.ignore_index = ignore_index
-        self.processor = processor
-
-    def __call__(self, examples):
-        texts = []
-        images = []
-        for example in examples:
-            messages = example["messages"]
-            message = self.processor.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=False
-            )
-
-            if "images" in example:
-                image = example["images"][0]
-            else:
-                image, _ = process_vision_info(messages)  # Ignore video output
-            texts.append(message)
-            if image is not None:
-                images.append(image)
-
-        batch = self.processor(
-            text=texts,
-            images=None if not images else images,
-            padding=True,
-            return_tensors="pt",
-        )
-        batch.pop("token_type_ids", None)
-
-        if images:
-            pixel_values = batch["pixel_values"]
-            if isinstance(pixel_values, list):
-                for j, pixel_value_j in enumerate(pixel_values):
-                    if isinstance(pixel_value_j, list):
-                        for k, pixel_value_k in enumerate(pixel_value_j):
-                            pixel_value_j[k] = pixel_value_k.to(self.dtype)
-                    else:
-                        pixel_values[j] = pixel_value_j.to(self.dtype)
-                batch["pixel_values"] = pixel_values
-            else:
-                batch["pixel_values"] = pixel_values.to(self.dtype)
-
-        labels = batch["input_ids"].clone()
-        labels[torch.isin(labels, self.padding_token_ids)] = self.ignore_index
-        batch["labels"] = labels
-        return batch
 
 
 class FastVLLM:
@@ -154,6 +95,7 @@ class FastVLLM:
         random_state=3407,
         use_rslora=False,
         loftq_config=None,
+        data_callator=None,
         **kwargs
     ):
         """Configures the SFTTrainer for fine-tuning."""
@@ -173,11 +115,17 @@ class FastVLLM:
         )
 
         FastVisionModel.for_training(self.model)
+            
+        if data_callator == None:
+            data_callator = UnslothVisionDataCollator(
+                self.model,
+                self.processor,
+            )
 
         self._trainer = SFTTrainer(
             model=self.model,
             tokenizer=self.processor,
-            data_collator=DataCollator(self.model, self.processor),
+            data_collator=data_callator,
             train_dataset=self.converted_dataset,
             callbacks=callbacks,
             args=SFTConfig(
