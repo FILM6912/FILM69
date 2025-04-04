@@ -5,4 +5,4 @@ def requires_memory(model_id="deepseek-ai/DeepSeek-R1"):
     metadata = get_safetensors_metadata(model_id)
     memory = (sum(count* dtype_bytes [key.split("_")[0]] for key, count in metadata.parameter_count.items())/ (1024**3)
     *1.18)
-    return "model_id\t: {model_id} \nrequires memory\t: {memory}GB"
+    return f"model_id\t: {model_id} \nrequires memory\t: {memory}GB"
