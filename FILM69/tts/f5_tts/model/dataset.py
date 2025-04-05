@@ -13,7 +13,6 @@ from tqdm.autonotebook import tqdm
 from FILM69.tts.f5_tts.model.modules import MelSpec
 from FILM69.tts.f5_tts.model.utils import default
 
-
 class HFDataset(Dataset):
     def __init__(
         self,
@@ -25,10 +24,12 @@ class HFDataset(Dataset):
         win_length=1024,
         mel_spec_type="vocos",
         audio_column="audio",
-        text_column="text"
+        text_column="text",
+        duration_column=None,
     ):
         self.audio_column = audio_column
         self.text_column = text_column
+        self.duration_column = duration_column
 
         self.data = hf_dataset
         self.target_sample_rate = target_sample_rate
@@ -48,8 +49,11 @@ class HFDataset(Dataset):
         audio = row[self.audio_column]["array"]
         sample_rate = row[self.audio_column]["sampling_rate"]
         # return audio.shape[-1] / sample_rate * self.target_sample_rate / self.hop_length
-        return (audio.shape[-1] / sample_rate) * self.target_sample_rate / self.hop_length
-
+        if self.duration_column == None:
+            return (audio.shape[-1] / sample_rate) * self.target_sample_rate / self.hop_length
+        else:
+            self.data[index][self.duration_column] * self.target_sample_rate / self.hop_length
+        
     def __len__(self):
         return len(self.data)
 
@@ -60,7 +64,10 @@ class HFDataset(Dataset):
         # logger.info(f"Audio shape: {audio.shape}")
 
         sample_rate = row[self.audio_column]["sampling_rate"]
-        duration = audio.shape[-1] / sample_rate
+        if self.duration_column == None:
+            duration = audio.shape[-1] / sample_rate
+        else:
+            duration = row[self.duration_column]
 
         if duration > 30 or duration < 0.3:
             return self.__getitem__((index + 1) % len(self.data))
@@ -251,7 +258,8 @@ def load_dataset(
     mel_spec_module: nn.Module | None = None,
     mel_spec_kwargs: dict = dict(),
     audio_column="audio",
-    text_column="text"
+    text_column="text",
+    duration_column=None,
 ) -> CustomDataset | HFDataset:
     """
     dataset_type    - "CustomDataset" if you want to use tokenizer name and default data path to load for train_dataset
@@ -309,7 +317,8 @@ def load_dataset(
         train_dataset = HFDataset(
             dataset_name,
             audio_column=audio_column,
-            text_column=text_column
+            text_column=text_column,
+            duration_column=duration_column,
         )
 
     return train_dataset
