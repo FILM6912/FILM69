@@ -74,8 +74,11 @@ class TTS:
         
         return audio_segment,sr,spectragram
         
-    def load_datasets(self,datasets):
+    def load_datasets(self,datasets,text_column="text",audio_column="audio",duration_column=None):
         self.datasets=datasets
+        self.text_column=text_column
+        self.audio_column=audio_column
+        self.duration_column=duration_column
         
     def vocab_check(self,datasets,file_vocab):
         with open(file_vocab, "r", encoding="utf-8-sig") as f:
@@ -303,7 +306,10 @@ class TTS:
             self.datasets,
             tokenizer,
             mel_spec_kwargs=mel_spec_kwargs,
-            dataset_type="HFDataset"
+            dataset_type="HFDataset",
+            text_column=self.text_column,
+            audio_column=self.audio_column,
+            duration_column=self.duration_column,
             )
         
     def start_train(self, resumable_with_seed=666):
