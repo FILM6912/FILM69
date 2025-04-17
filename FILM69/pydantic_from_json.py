@@ -1,93 +1,80 @@
 import json
-from typing import Any, Literal, List, Union
-from collections import OrderedDict
-from pydantic import BaseModel, Field, create_model
-
-# namespace สำหรับ eval ให้รองรับเฉพาะชนิดที่เราต้องการ
-import json
 from typing import Any, Literal, List, Union, Optional
 from collections import OrderedDict
 from pydantic import BaseModel, Field, create_model
 
-# namespace สำหรับ eval ให้รองรับชนิดที่เราต้องการ
+# namespace สำหรับ eval
 _type_ns = {
     'Literal': Literal,
     'List': List,
     'Union': Union,
     'Any': Any,
+    'Optional': Optional,
     'str': str,
     'int': int,
     'float': float,
     'bool': bool,
-    'Optional': Optional,
 }
 
 def parse_type(type_str: str):
     """
-    แปลง type string ให้เป็นตัว annotation จริง ๆ ด้วย eval ใน namespace จำกัด
+    แปลง type string ให้เป็น annotation จริง ๆ ด้วย eval
+    รองรับ:
+     - Literal[...]
+     - Union[...]
+     - List[...]
+     - Any, str, int, float, bool
+     - Optional[...] หรือ Optional[..., None]
     """
-    try:
+    # Optional[...] (อาจประกอบด้วย None)
+    if type_str.startswith("Optional["):
+        inner = type_str[len("Optional["):-1]
+        parts = [p.strip() for p in inner.split(",") if p.strip() and p.strip() != "None"]
+        if len(parts) != 1:
+            raise ValueError(f"Optional ต้องมีแค่ type เดียว (หรือ None): {type_str}")
+        base = parse_type(parts[0])
+        return Optional[base]
+
+    # Union[...]
+    if type_str.startswith("Union["):
         return eval(type_str, {}, _type_ns)
-    except Exception as e:
-        raise ValueError(f"Unknown type: {type_str}") from e
+
+    # Literal[...]
+    if type_str.startswith("Literal["):
+        return eval(type_str, {}, _type_ns)
+
+    # List[...]
+    if type_str.startswith("List["):
+        return eval(type_str, {}, _type_ns)
+
+    # พื้นฐาน
+    if type_str in _type_ns:
+        return _type_ns[type_str]
+
+    raise ValueError(f"Unknown type: {type_str}")
 
 def pydantic_from_json(json_string: str) -> type[BaseModel]:
-    """
-    สร้าง Pydantic model แบบ dynamic จาก JSON format:
-    {
-      "<field>": {
-        "type": "<type_str>",
-        "title": "<title>",
-        "description": "<desc>",
-        // ถ้ามี default => ใส่ default ค่านี้
-        "default": ...,
-        // ที่เหลือจะไปเป็น json_schema_extra
-        "length": 13,
-        "example": ...,
-        ...
-      },
-      ...
-    }
-    """
     raw = json.loads(json_string)
     fields_def: dict[str, tuple[type, Field]] = {}
 
+    # สร้าง fields_def ตามลำดับ JSON
     for field_name, info in raw.items():
-        # ดึงค่าหลักออกมา
         type_str    = info.pop("type")
         title       = info.pop("title", field_name)
         description = info.pop("description", "")
-        default     = info.pop("default", None)
+        default     = info.pop("default", ...)  # ... คือ required
+        extra       = info if info else {}
 
-        # ส่วนที่เหลือถือเป็น json_schema_extra
-        extra = {"json_schema_extra": info} if info else {}
-
-        # แปลงเป็น annotation
-        anno = parse_type(type_str)
-        # ถ้า user ไม่กำหนด default => default=None และ annotation ต้อง Optional
-        if default is None:
-            anno = Optional[anno]
-            default_value = None
-        else:
-            default_value = default
-
-        # สร้าง field definition
+        annotation = parse_type(type_str)
         fields_def[field_name] = (
-            anno,
-            Field(default_value, title=title, description=description, **extra)
+            annotation,
+            Field(default, title=title, description=description, **extra)
         )
 
-    # สร้างโมเดล
     Model = create_model("DynamicUser", **fields_def)
 
-    # จัดเรียง model_fields ตามลำดับใน JSON
-    ordered = OrderedDict(
-        (k, Model.model_fields[k])
-        for k in raw.keys()
-        if k in Model.model_fields
-    )
-
     return Model
+
 
 
 if __name__ == "__main__":
@@ -151,7 +138,7 @@ if __name__ == "__main__":
         "description": "แขวง/ตำบลและผู้ใช้ตอบมาแล้วให้ตรวจสอบในฐานข้อมูลจังหวัด"
     },
     "email": {
-        "type": "str",
+        "type": "Optional[str,None]",
         "title": "อีเมล",
         "description": "อีเมล"
     },
@@ -168,4 +155,4 @@ if __name__ == "__main__":
 }
 '''
     UserModel = pydantic_from_json(json_input)
-
+    print(UserModel.model_fields)
