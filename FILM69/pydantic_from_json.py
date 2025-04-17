@@ -4,6 +4,12 @@ from collections import OrderedDict
 from pydantic import BaseModel, Field, create_model
 
 # namespace สำหรับ eval ให้รองรับเฉพาะชนิดที่เราต้องการ
+import json
+from typing import Any, Literal, List, Union, Optional
+from collections import OrderedDict
+from pydantic import BaseModel, Field, create_model
+
+# namespace สำหรับ eval ให้รองรับชนิดที่เราต้องการ
 _type_ns = {
     'Literal': Literal,
     'List': List,
@@ -13,36 +19,68 @@ _type_ns = {
     'int': int,
     'float': float,
     'bool': bool,
+    'Optional': Optional,
 }
 
 def parse_type(type_str: str):
+    """
+    แปลง type string ให้เป็นตัว annotation จริง ๆ ด้วย eval ใน namespace จำกัด
+    """
     try:
-        # ประเมินใน namespace ที่จำกัด
         return eval(type_str, {}, _type_ns)
     except Exception as e:
         raise ValueError(f"Unknown type: {type_str}") from e
 
 def pydantic_from_json(json_string: str) -> type[BaseModel]:
+    """
+    สร้าง Pydantic model แบบ dynamic จาก JSON format:
+    {
+      "<field>": {
+        "type": "<type_str>",
+        "title": "<title>",
+        "description": "<desc>",
+        // ถ้ามี default => ใส่ default ค่านี้
+        "default": ...,
+        // ที่เหลือจะไปเป็น json_schema_extra
+        "length": 13,
+        "example": ...,
+        ...
+      },
+      ...
+    }
+    """
     raw = json.loads(json_string)
     fields_def: dict[str, tuple[type, Field]] = {}
 
-    # สร้าง fields_def ตามลำดับ key ใน JSON
     for field_name, info in raw.items():
+        # ดึงค่าหลักออกมา
         type_str    = info.pop("type")
         title       = info.pop("title", field_name)
         description = info.pop("description", "")
-        extra       = info if info else {}
+        default     = info.pop("default", None)
 
-        annotation = parse_type(type_str)
+        # ส่วนที่เหลือถือเป็น json_schema_extra
+        extra = {"json_schema_extra": info} if info else {}
+
+        # แปลงเป็น annotation
+        anno = parse_type(type_str)
+        # ถ้า user ไม่กำหนด default => default=None และ annotation ต้อง Optional
+        if default is None:
+            anno = Optional[anno]
+            default_value = None
+        else:
+            default_value = default
+
+        # สร้าง field definition
         fields_def[field_name] = (
-            annotation,
-            Field(..., title=title, description=description, **extra)
+            anno,
+            Field(default_value, title=title, description=description, **extra)
         )
 
     # สร้างโมเดล
     Model = create_model("DynamicUser", **fields_def)
 
-    # จัดเรียง model_fields ตามลำดับใน raw
+    # จัดเรียง model_fields ตามลำดับใน JSON
     ordered = OrderedDict(
         (k, Model.model_fields[k])
         for k in raw.keys()
@@ -50,6 +88,7 @@ def pydantic_from_json(json_string: str) -> type[BaseModel]:
     )
 
     return Model
+
 
 if __name__ == "__main__":
     json_input = '''
