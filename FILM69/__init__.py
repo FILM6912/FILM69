@@ -1,3 +1,5 @@
+from pydantic_from_json import pydantic_from_json
+
 def torch_parameters_model(model):
     num = sum(p.numel() for p in model.parameters())
     if num >= 1e9:
@@ -12,3 +14,4 @@ def torch_parameters_model(model):
     total_layers = sum(1 for _ in model.children())
 
     return total_parameters,total_layers
+
