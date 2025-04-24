@@ -585,14 +585,14 @@ def merge_and_overwrite_lora(
 
     for filename in ProgressBar(safetensors_list, desc = "Unsloth: Merging weights into 16bit"):
        
-        if low_disk_space_usage:
-            hf_hub_download(
-                repo_id = model_name,
-                filename = filename,
-                repo_type = "model",
-                local_dir = save_directory,
-            )
-        pass
+        if len(safetensors_list)>1:
+            if low_disk_space_usage:
+                hf_hub_download(
+                    repo_id = model_name,
+                    filename = filename,
+                    repo_type = "model",
+                    local_dir = save_directory,
+                )
         
         n_saved_modules += _merge_and_overwrite_lora(
             save_directory = save_directory,
