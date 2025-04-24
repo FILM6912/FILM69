@@ -176,7 +176,7 @@ from peft.utils.integrations import dequantize_module_weight
 import collections
 import numpy as np
 import inspect
-from tqdm import tqdm as ProgressBar
+from tqdm.autonotebook import tqdm as ProgressBar
 from dataclasses import dataclass
 
 @dataclass
