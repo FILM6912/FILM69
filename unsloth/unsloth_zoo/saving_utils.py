@@ -583,9 +583,9 @@ def merge_and_overwrite_lora(
                 allow_patterns  = safetensors_list+["model.safetensors.index.json"] if len(safetensors_list)>1 else safetensors_list,
             )
 
-    for filename in ProgressBar(safetensors_list, desc = "Unsloth: Merging weights into 16bit"):
+    for filename in ProgressBar(safetensors_list, desc = "Merging weights into 16bit"):
        
-        if len(safetensors_list)>1:
+        if len(safetensors_list)<1:
             if low_disk_space_usage:
                 hf_hub_download(
                     repo_id = model_name,
