@@ -106,7 +106,7 @@ from huggingface_hub import (
 from safetensors import safe_open
 from safetensors.torch import save_file
 from collections import OrderedDict
-from tqdm import tqdm as ProgressBar
+from tqdm.autonotebook import tqdm as ProgressBar
 import os, shutil, re, functools
 
 
