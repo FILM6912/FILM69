@@ -22,8 +22,6 @@ __all__ = [
 
 from .peft_utils import get_lora_layer_modules
 from .utils import _get_dtype
-from pathlib import Path
-import shutil
 
 MODEL_CARD = \
 """---
@@ -52,13 +50,21 @@ This {model_type} model was trained 2x faster with [Unsloth](https://github.com/
 
 import torch
 try:
-    from huggingface_hub.utils import get_token
+    from huggingface_hub import get_token
 except:
-    # Old HF Hub versions <= 0.0.25
-    from huggingface_hub.utils._token import get_token
+    try:
+        from huggingface_hub.utils import get_token
+    except:
+        # For older versions of huggingface_hub
+        from huggingface_hub.utils._token import get_token
+    pass
 pass
 from transformers.modeling_utils import PushToHubMixin
+import json
+import os
+from pathlib import Path
 import tempfile
+from peft import PeftModelForCausalLM
 
 
 def create_huggingface_repo(
@@ -97,12 +103,12 @@ def create_huggingface_repo(
     return username, repo_id, hf_api
 pass
 
-
 from huggingface_hub import (
     snapshot_download,
     hf_hub_download,
     HfFileSystem,
 )
+
 from safetensors import safe_open
 from safetensors.torch import save_file
 from collections import OrderedDict
@@ -320,6 +326,10 @@ def _merge_and_overwrite_lora(save_directory, filename, lora_weights, output_dty
     filename = os.path.join(save_directory, filename)
     tensors = OrderedDict()
     count = 0
+    import psutil
+    import tempfile
+    import pickle
+    limit = 700 * 1024 * 1024 # 700MB
     with safe_open(filename, framework = "pt", device = "cpu") as file:
         for key in file.keys():
             W = file.get_tensor(key)
@@ -327,7 +337,12 @@ def _merge_and_overwrite_lora(save_directory, filename, lora_weights, output_dty
             if lora_stats is not None:
                 count += 1
                 W = _merge_lora(W, lora_stats, key)
-                W = W.to(device = "cpu", dtype = output_dtype, non_blocking = True)
+                if psutil.virtual_memory().available <= limit:
+                    filename = tempfile.NamedTemporaryFile(suffix = ".pt")
+                    torch.save(W.to(output_dtype), filename, pickle_module = pickle, pickle_protocol = pickle.HIGHEST_PROTOCOL)
+                    W = torch.load(filename, map_location = "cpu", mmap = True, weights_only = False)
+                else:
+                    W = W.to(device = "cpu", dtype = output_dtype, non_blocking = True)
             pass
             tensors[key] = W
         pass
@@ -484,7 +499,22 @@ def prepare_saving(
     )
 pass
 
-####################################################################################################################
+
+def _remove_quantization_config(config_path: Path):
+    assert config_path.exists(), "Given config does not exist"
+    with open(config_path, "r") as f:
+        config = json.load(f)
+    if "quantization_config" in config:
+        # Remove the quantization_config field
+        del config["quantization_config"]
+    else:
+        return
+    # Overwrite the config file
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent = 4)
+    pass
+pass
+
 
 @torch.inference_mode
 def merge_and_overwrite_lora(
@@ -498,10 +528,12 @@ def merge_and_overwrite_lora(
     output_dtype         = None,
     low_disk_space_usage = False,
     use_temp_file        = False,
+    cleanup_temp_file    = True,
 ):
     # All Unsloth Zoo code licensed under LGPLv3
     # Directly downloads 16bit original weights and merges LoRA
-    inner_model = model.base_model.model if hasattr(model, "base_model") else model
+    inner_model = model.base_model.model if isinstance(model, PeftModelForCausalLM) else model
+    inner_model = inner_model.base_model if hasattr(model, "base_model") else inner_model
 
     try:
         model_name = get_model_name(model.config._name_or_path, load_in_4bit = False)
@@ -512,9 +544,12 @@ def merge_and_overwrite_lora(
     try:
         file_list = HfFileSystem(token = token).ls(model_name, detail = True)
     except:
+        # original_model_id = get_original_model_id(model_name)
+        # model_name = original_model_id
+        # file_list = HfFileSystem(token = token).ls(model_name, detail = True)
         file_list=[{"name":i,"size":Path(f"{model_name}/{i}").stat().st_size} for i in os.listdir(model_name)]
-            
-    
+
+
     safetensors_list = []
     max_size_in_bytes = 0
     total_size_in_bytes = 0
@@ -566,33 +601,48 @@ def merge_and_overwrite_lora(
     inner_model.save_pretrained(
         save_directory = save_directory,
         state_dict = {},
-        safe_serialization=True
     )
-    
+    # Remove the quantization_config in the config.json file if it exists,
+    # as we are exporting the model in 16-bit format.
+    _remove_quantization_config(config_path = Path(save_directory) / "config.json")
+
+    locals_model=False
     if push_to_hub: upload_items()
     try:
         for i in safetensors_list:
             shutil.copy(f"{model_name}/{i}", f"{save_directory}/{i}")
         shutil.copy(f"{model_name}/config.json", f"{save_directory}/config.json")
         if len(safetensors_list)>1:shutil.copy(f"{model_name}/model.safetensors.index.json", f"{save_directory}/model.safetensors.index.json")
+        locals_model=True
     except:
+        safe_tensor_index_files = ["model.safetensors.index.json"] if len(safetensors_list) > 1 else []
         if not low_disk_space_usage:
+            # Download all safetensors in 1 go!
+            print(f"Downloading safetensors for {model_name}...")
             snapshot_download(
                 repo_id = model_name,
                 local_dir = save_directory,
-                allow_patterns  = safetensors_list+["model.safetensors.index.json"] if len(safetensors_list)>1 else safetensors_list,
+                allow_patterns = safe_tensor_index_files + safetensors_list,
             )
-
-    for filename in ProgressBar(safetensors_list, desc = "Merging weights into 16bit"):
-       
-        if low_disk_space_usage:
-            hf_hub_download(
+        elif safe_tensor_index_files:
+            print(f"Downloading safetensors index for {model_name}...")
+            snapshot_download(
                 repo_id = model_name,
-                filename = filename,
-                repo_type = "model",
                 local_dir = save_directory,
+                allow_patterns = ["model.safetensors.index.json"],
             )
+            
+    for filename in ProgressBar(safetensors_list, desc = "Merging weights into 16bit"):
         
+        if not locals_model:
+            if low_disk_space_usage :
+                hf_hub_download(
+                    repo_id = model_name,
+                    filename = filename,
+                    repo_type = "model",
+                    local_dir = save_directory,
+                )
+
         n_saved_modules += _merge_and_overwrite_lora(
             save_directory = save_directory,
             filename = filename,
@@ -605,7 +655,6 @@ def merge_and_overwrite_lora(
             os.remove(os.path.join(save_directory, filename)) # Remove to conserve disk space
         pass
     pass
-
     if not low_disk_space_usage and push_to_hub: upload_items()
 
     # Check for errors
@@ -619,9 +668,10 @@ def merge_and_overwrite_lora(
         try: temp_file.cleanup()
         except: pass
     pass
+    return save_directory
 pass
 
-####################################################################################################################
+
 _PUSHING_CODE = \
 """
 PushToHubMixin._upload_modified_files(
@@ -686,7 +736,7 @@ def incremental_save_pretrained(
         new_for_loop = for_loop[:first_newline] + \
             for_loop[first_newline:] + \
             " "*spaces + \
-            re.sub(r"[ ]{8,}", "", 
+            re.sub(r"[ ]{8,}", "",
                    _PUSHING_CODE.format(
                        repo_id = repo_id,
                        revision = revision,
@@ -746,7 +796,8 @@ def merge_and_dequantize_lora(
 ):
     # All Unsloth Zoo code licensed under LGPLv3
     # Dequantizes model to 16bit weights and merges LoRA
-    inner_model = model.base_model.model if hasattr(model, "base_model") else model
+    inner_model = model.base_model.model if isinstance(model, PeftModelForCausalLM) else model
+    inner_model = inner_model.base_model if hasattr(model, "base_model") else inner_model
 
     (
         username, repo_id, hf_api, token,
@@ -876,6 +927,30 @@ def merge_and_dequantize_lora(
         except: pass
     pass
 pass
+
+def get_original_model_id(local_path: str):
+    import json
+    import os
+    
+    config_path = os.path.join(local_path, "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = json.load(f)
+            
+        # Check for _name_or_path that's not a local path
+        # When we load using AutoConfig, the _name_or_path changed into the local path instead
+        if "_name_or_path" in config:
+            return config["_name_or_path"]
+        
+    config_path = os.path.join(local_path, "adapter_config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            config = json.load(f)
+            
+        if "base_model_name_or_path" in config:
+            return config["base_model_name_or_path"]
+    
+    return None
 
 # Unsloth Zoo - Utilities for Unsloth
 # Copyright 2023-present Daniel Han-Chen, Michael Han-Chen & the Unsloth team. All rights reserved.
