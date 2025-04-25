@@ -32,7 +32,7 @@ LLM=[
 ]
 
 ubuntu=[
-    "flash-attn",
+    # "flash-attn",
     "ninja",
     "xformers",
 ]
