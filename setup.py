@@ -34,7 +34,7 @@ LLM=[
 ubuntu=[
     # "flash-attn",
     "ninja",
-    "xformers",
+    "xformers==0.0.29.post3",
 ]
 
 RAG=[
