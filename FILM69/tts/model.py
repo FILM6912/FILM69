@@ -182,7 +182,10 @@ class TTS:
         num_warmup_updates=0,
         keep_last_n_checkpoints=5,
         finetune=True,
+        
         pretrain=None,
+        vocab_file=None,
+        
         tokenizer='char',
         tokenizer_path=None,
         log_samples=True,
@@ -208,8 +211,16 @@ class TTS:
         os.makedirs(output+"/checkpoints", exist_ok=True)
         if not os.path.exists(f"{output}/old_vocab.txt"):
             os.makedirs(os.path.dirname(f"{output}/old_vocab.txt"), exist_ok=True)
-            with open(f"{output}/old_vocab.txt", "wb") as f:
-                f.write(requests.get("https://raw.githubusercontent.com/WATCHARAPHON6912/FILM69/refs/heads/main/data/Emilia_ZH_EN_pinyin/vocab.txt").content)
+            
+        content=None
+        if vocab_file is None:
+            content=requests.get("https://raw.githubusercontent.com/WATCHARAPHON6912/FILM69/refs/heads/main/data/Emilia_ZH_EN_pinyin/vocab.txt").content
+        else:
+            with open(vocab_file, "rb") as f:
+                content = f.read()
+    
+        with open(f"{output}/old_vocab.txt", "wb") as f:
+            f.write(content)
         
         if check_vocab:
             info,new_vocab=self.vocab_check(self.datasets,f"{output}/old_vocab.txt")
@@ -248,12 +259,10 @@ class TTS:
                 file_checkpoint = os.path.basename(ckpt_path)
                 if not file_checkpoint.startswith("pretrained_"):  # Change: Add 'pretrained_' prefix to copied model
                     file_checkpoint = "pretrained_" + file_checkpoint
-                    
-                if not pretrain is None:
-                    file_checkpoint = os.path.join(checkpoint_path, file_checkpoint)
-                    if not os.path.isfile(file_checkpoint):
-                        shutil.copy2(ckpt_path, file_checkpoint)
-                        print("copy checkpoint for finetune")
+                file_checkpoint = os.path.join(checkpoint_path, file_checkpoint)
+                if not os.path.isfile(file_checkpoint):
+                    shutil.copy2(ckpt_path, file_checkpoint)
+                    print("copy checkpoint for finetune")
 
             # Use the tokenizer and tokenizer_path provided in the command line arguments
         tokenizer = tokenizer
@@ -264,7 +273,18 @@ class TTS:
         else:
                 tokenizer_path = dataset_name
 
-        vocab_char_map, vocab_size = get_tokenizer(tokenizer_path, tokenizer)
+        try:
+            vocab_char_map, vocab_size = get_tokenizer(tokenizer_path, tokenizer)
+        except:
+            content=None
+            if vocab_file is None:content=requests.get("https://raw.githubusercontent.com/WATCHARAPHON6912/FILM69/refs/heads/main/data/Emilia_ZH_EN_pinyin/vocab.txt").content
+            else:
+                with open(vocab_file, "rb") as f:content = f.read()
+                
+            with open(f"{output}/new_vocab.txt", "wb") as f:
+                f.write(content)
+            vocab_char_map, vocab_size = get_tokenizer(tokenizer_path, tokenizer)
+            
         print("\nvocab : ", vocab_size)
         print("\nvocoder : ", mel_spec_type)
         
