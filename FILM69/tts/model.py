@@ -104,7 +104,7 @@ class TTS:
 
         return info, vocab_miss
     
-    def vocab_extend(self,output, symbols, model_type = "F5-TTS"):
+    def vocab_extend(self,output, symbols, model_type = "F5-TTS",ckpt_path=None):
         if symbols == "":
             return "Symbols empty!"
         
@@ -143,17 +143,21 @@ class TTS:
         with open(file_vocab_project, "w", encoding="utf-8") as f:
             f.write("\n".join(vocab))
 
-        if model_type == "F5-TTS":
-            ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
-        else:
-            ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
+        if ckpt_path == None:
+            if model_type == "F5-TTS":
+                ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
+            else:
+                ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
 
         vocab_size_new = len(miss_symbols)
 
         new_ckpt_path = output+"/checkpoints"
         os.makedirs(new_ckpt_path, exist_ok=True)
 
-        new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_model_1200000.pt")
+        if ckpt_path == None:
+            new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_model_1200000.pt")
+        else:
+            new_ckpt_file = os.path.join(new_ckpt_path, ckpt_path.split("/")[-1])
 
         size = expand_model_embeddings(ckpt_path, new_ckpt_file, num_new_tokens=vocab_size_new)
 
@@ -224,7 +228,7 @@ class TTS:
         
         if check_vocab:
             info,new_vocab=self.vocab_check(self.datasets,f"{output}/old_vocab.txt")
-            info_extend=self.vocab_extend(output,new_vocab,model_type)
+            info_extend=self.vocab_extend(output,new_vocab,model_type,ckpt_path=pretrain)
             print(info_extend)
         else:print("Not check vocab")
         
