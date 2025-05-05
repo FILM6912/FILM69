@@ -277,9 +277,16 @@ class FastModel:
         self.chat_history.append(messages)
 
         self.streamer = TextIteratorStreamer(self.processor, skip_prompt=True, skip_special_tokens=True)
-        terminators = [self.processor.tokenizer.eos_token_id] + [
-            self.processor.tokenizer.convert_tokens_to_ids(i) for i in end
-        ]
+        
+        try:
+            terminators = [self.processor.tokenizer.eos_token_id] + [
+                self.processor.tokenizer.convert_tokens_to_ids(i) for i in end
+            ]
+        except:
+            terminators = [self.processor.eos_token_id] + [
+                self.processor.convert_tokens_to_ids(i) for i in end
+            ]
+            
 
         input_ids = self.processor.apply_chat_template(
             self.chat_history if history_save else [messages],
