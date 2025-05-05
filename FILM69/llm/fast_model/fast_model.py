@@ -300,12 +300,11 @@ class FastModel:
         check_image = self.chat_history[-1]["content"] if history_save else messages["content"]
         if not any(i["type"] == "image" for i in check_image):
             input_ids["input_ids"] = torch.tensor([[2] + input_ids["input_ids"].cpu().numpy().tolist()[0]]).to("cuda")
-            input_ids["attention_mask"] = torch.tensor([[1] + input_ids["attention_mask"].cpu().numpy().tolist()[0]]).to(
-                "cuda"
-            )
-            input_ids["token_type_ids"] = torch.tensor([[0] + input_ids["token_type_ids"].cpu().numpy().tolist()[0]]).to(
-                "cuda"
-            )
+            input_ids["attention_mask"] = torch.tensor([[1] + input_ids["attention_mask"].cpu().numpy().tolist()[0]]).to(self.model.device)
+            try:
+                input_ids["token_type_ids"] = torch.tensor([[0] + input_ids["token_type_ids"].cpu().numpy().tolist()[0]]).to(self.model.device)
+            except:...
+                
 
         if not history_save and text != "":
             del self.chat_history[-1]
@@ -362,7 +361,7 @@ class FastModel:
     def export_to_GGUF(
         self,
         model_name="model",
-        quantization_method=["q4_k_m", "q8_0", "f16"],
+        quantization_type=["q4_k_m", "q8_0", "f16"],
         save_original_model=False,
         max_size_gguf="49G",
         build_gpu=False,
@@ -381,7 +380,7 @@ class FastModel:
             **kwargs: Additional keyword arguments for `save_pretrained_gguf`.
         """
         _FastModel.for_inference(self.model)
-        self.model.save_pretrained_gguf(model_name, self.processor, quantization_type="Q8_0", **kwargs)
+        self.model.save_pretrained_gguf(model_name, self.processor, quantization_type=quantization_type, **kwargs)
         source_directory = Path(model_name)
         gguf_directory = source_directory / "GGUF"
         max_size_gguf = max_size_gguf.upper()
