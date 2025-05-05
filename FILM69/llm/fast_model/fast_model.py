@@ -262,7 +262,8 @@ class FastModel:
         """
         _FastModel.for_inference(self.model)
         if end is None:
-            end = [self.processor.tokenizer.eos_token]
+            try:end = [self.processor.tokenizer.eos_token]
+            except:end = [self.processor.eos_token]
 
         if image is None:
             messages = {"role": "user", "content": [{"type": "text", "text": text}]}
