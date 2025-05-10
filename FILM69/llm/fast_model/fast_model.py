@@ -297,13 +297,13 @@ class FastModel:
             return_tensors="pt",
         ).to(self.model.device)
 
-        check_image = self.chat_history[-1]["content"] if history_save else messages["content"]
-        if not any(i["type"] == "image" for i in check_image):
-            input_ids["input_ids"] = torch.tensor([[2] + input_ids["input_ids"].cpu().numpy().tolist()[0]]).to("cuda")
-            input_ids["attention_mask"] = torch.tensor([[1] + input_ids["attention_mask"].cpu().numpy().tolist()[0]]).to(self.model.device)
-            try:
-                input_ids["token_type_ids"] = torch.tensor([[0] + input_ids["token_type_ids"].cpu().numpy().tolist()[0]]).to(self.model.device)
-            except:...
+        # check_image = self.chat_history[-1]["content"] if history_save else messages["content"]
+        # if not any(i["type"] == "image" for i in check_image):
+        #     input_ids["input_ids"] = torch.tensor([[2] + input_ids["input_ids"].cpu().numpy().tolist()[0]]).to("cuda")
+        #     input_ids["attention_mask"] = torch.tensor([[1] + input_ids["attention_mask"].cpu().numpy().tolist()[0]]).to(self.model.device)
+        #     try:
+        #         input_ids["token_type_ids"] = torch.tensor([[0] + input_ids["token_type_ids"].cpu().numpy().tolist()[0]]).to(self.model.device)
+        #     except:...
                 
 
         if not history_save and text != "":
