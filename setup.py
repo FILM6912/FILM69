@@ -28,7 +28,8 @@ LLM=[
     "peft",
     "huggingface-hub",
     "langchain-core",
-    "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git",
+    "unsloth",
+    "unsloth-zoo @ git+https://github.com/rupaut98/unsloth-zoo.git@fix-gemma-vision"
 ]
 
 ubuntu=[
@@ -45,7 +46,6 @@ RAG=[
 UI=[
     "stqdm",
     "ipywidgets",
-  
 ]
 
 SPEECH=[
