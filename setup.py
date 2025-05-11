@@ -1,4 +1,20 @@
+import os
+import shutil
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+
+class InstallCommand(install):
+    def run(self):
+        # Run the standard install
+        install.run(self)
+
+        from FILM69.llm.unsloth_zoo import saving_utils as save_modi
+        from unsloth_zoo import saving_utils as save
+        
+        source = save.__file__
+        destination = save_modi.__file__
+        os.makedirs(destination, exist_ok=True)
+        shutil.copy(source, destination)
 
 # Common packages used across multiple extras
 common_packages = [
@@ -94,7 +110,7 @@ setup(
     url="https://github.com/watcharaphon6912",
     packages=find_packages(),
     python_requires=">=3.10",
-     entry_points={
+    entry_points={
         "console_scripts": [
             "tts=FILM69.tts.f5_tts.infer.infer_cli:main",
             "tts_train_ui=FILM69.tts.f5_tts.train.finetune_gradio:main",
@@ -114,5 +130,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
     ],
+    cmdclass={
+        'install': InstallCommand,
+    },
 )
- 
