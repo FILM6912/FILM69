@@ -2,6 +2,8 @@ import os
 import shutil
 import importlib.util
 from setuptools.command.install import install
+from setuptools import setup, find_packages
+
 
 class InstallCommand(install):
     def run(self):
