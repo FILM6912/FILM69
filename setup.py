@@ -15,6 +15,7 @@ class InstallCommand(install):
         destination = save_modi.__file__
         os.makedirs(destination, exist_ok=True)
         shutil.copy(source, destination)
+        print("copying done")
 
 # Common packages used across multiple extras
 common_packages = [
