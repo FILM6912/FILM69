@@ -20,8 +20,8 @@ __all__ = [
     "merge_and_overwrite_lora",
 ]
 
-from .peft_utils import get_lora_layer_modules
-from .utils import _get_dtype
+from unsloth_zoo.peft_utils import get_lora_layer_modules
+from unsloth_zoo.utils import _get_dtype
 
 MODEL_CARD = \
 """---
