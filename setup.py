@@ -1,21 +1,31 @@
 import os
 import shutil
-from setuptools import setup, find_packages
+import importlib.util
 from setuptools.command.install import install
 
 class InstallCommand(install):
     def run(self):
-        # Run the standard install
         install.run(self)
 
-        from FILM69.llm.unsloth_zoo import saving_utils as save_modi
-        from unsloth_zoo import saving_utils as save
-        
-        source = save.__file__
-        destination = save_modi.__file__
-        os.makedirs(destination, exist_ok=True)
-        shutil.copy(source, destination)
-        print("copying done")
+        try:
+            spec = importlib.util.find_spec("unsloth_zoo.saving_utils")
+            if spec is None:
+                print("unsloth_zoo.saving_utils not found. Skipping file copy.")
+                return
+            source = spec.origin
+
+            spec_mod = importlib.util.find_spec("FILM69.llm.unsloth_zoo.saving_utils")
+            if spec_mod is None:
+                print("FILM69.llm.unsloth_zoo.saving_utils not found. Skipping file copy.")
+                return
+            destination = spec_mod.origin
+
+            os.makedirs(os.path.dirname(destination), exist_ok=True)
+            shutil.copy(source, destination)
+            print(f"Copied {source} to {destination}")
+        except Exception as e:
+            print("Error during post-install copy:", e)
+
 
 # Common packages used across multiple extras
 common_packages = [
