@@ -265,11 +265,14 @@ class FastLLM:
                 text_out = ""
                 if history_save:
                     self.chat_history.append({"role": "assistant", "content": text_out})
+                index=0
                 for new_text in self.streamer:
                     text_out += new_text
-                    if history_save:
-                        self.chat_history[-1] = {"role": "assistant", "content": text_out}
-                    yield from new_text
+                    index+=1
+                    if index>=2:
+                        if history_save:
+                            self.chat_history[-1] = {"role": "assistant", "content": text_out}
+                        yield new_text
                 thread.join()
 
             return inner()
