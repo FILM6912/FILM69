@@ -20,7 +20,7 @@ def convert_to_gguf(dir_model:str,output_name:str=None,quantization_method:list[
     os.system(command)
     
     for i in quantization_method:
-        if i != "f16":
+        if i.upper() != "F16":
             command = f'llama.cpp/build/bin/llama-quantize {output_name if output_name !=None else dir_model}.F16.gguf {output_name if output_name !=None else dir_model}.{i.upper()}.gguf {i.upper()}'
             os.system(command)
             
