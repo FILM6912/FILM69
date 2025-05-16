@@ -1,6 +1,5 @@
 import platform,os
 import shutil
-
 def __check_file__(path):
         """Checks files in a directory and returns their paths and sizes."""
         files_path = []
@@ -48,12 +47,10 @@ def convert_to_gguf(
             
             req='&& pip install -r requirements.txt' if install_req else ""
             build_gpu_command = "-DGGML_CUDA=ON"
-            command = f"""
-                cd llama.cpp && \
-                cmake -B build {build_gpu_command if build_gpu else ''} && \
-                cmake --build build --config Release -j 8 \
-                {req} > /dev/null 2>&1"
-                """
+            command = f"""cd llama.cpp && cmake -B build\
+                {build_gpu_command if build_gpu else ''}\
+                && cmake --build build --config Release -j 8\
+                {req} > /dev/null 2>&1"""
             os.system(command)
             
             print("Done!")    
