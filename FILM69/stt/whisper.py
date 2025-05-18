@@ -182,12 +182,15 @@ class Whisper:
             self.model.save_pretrained_merged(output_dir, self.tokenizer, save_method = save_method)
     
     def predict(self,audio, torch_dtype=torch.float16,return_language=True,**kwargs):
-        FastModel.for_inference(self.model)
-        self.model.eval()
+        try:model=self.model
+        except:model=self.base_model
+        
+        FastModel.for_inference(model)
+        model.eval()
 
         self.whisper = pipeline(
                 "automatic-speech-recognition",
-                model=self.model,
+                model=model,
                 tokenizer=self.tokenizer.tokenizer,
                 feature_extractor=self.tokenizer.feature_extractor,
                 torch_dtype=torch_dtype,
@@ -196,7 +199,7 @@ class Whisper:
         )
 
         return self.whisper(audio,**kwargs)
-
+       
 
 if __name__ =="__main__":
     x=Whisper()
