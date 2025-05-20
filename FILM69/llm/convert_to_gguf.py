@@ -61,8 +61,8 @@ def convert_to_gguf(
     for i in quantization_method:
         if i.upper() != "F16":
             command = f'{p}llama.cpp/build/bin/llama-quantize\
-                {path_output if path_output !=None else folder_path+'/'+path_model}.F16.gguf\
-                {path_output if path_output !=None else folder_path+'/'+path_model}.{i.upper()}.gguf {i.upper()}'
+                {path_output if path_output !=None else folder_path+"/"+path_model}.F16.gguf\
+                {path_output if path_output !=None else folder_path+"/"+path_model}.{i.upper()}.gguf {i.upper()}'
                 
             os.system(command)
             
