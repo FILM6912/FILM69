@@ -2,27 +2,45 @@ import flet as ft
 import time
 
 class MessageContainer(ft.Container):
-    def __init__(self, body):
+    def __init__(
+        self,
+        body,
+        bgcolor=ft.Colors.BLACK87,
+        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+        code_theme=ft.MarkdownCodeTheme.MONOKAI,
+        code_style_sheet=ft.MarkdownStyleSheet.block_spacing
+        ):
+        
         super().__init__()
         self.content = ft.Column(
             controls=[
                 ft.Markdown(
                     body,
                     selectable=True,
-                    extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+                    extension_set=extension_set,
                     on_tap_link=lambda e: self.page.launch_url(e.data),
+                    code_theme=code_theme,
+                    code_style_sheet=code_style_sheet
                 ),
             ],
         )
         self.border = ft.border.all(1, ft.Colors.BLACK)
         self.border_radius = ft.border_radius.all(10)
-        self.bgcolor = ft.Colors.BLACK87
+        self.bgcolor = bgcolor
         self.padding = 10
         self.expand = True
         self.expand_loose = True
 
 class Message(ft.Row):
-    def __init__(self, text, name, user_or_ai="user"):
+    def __init__(
+        self,
+        text, 
+        name, 
+        user_or_ai="user",
+        bgcolor=ft.Colors.BLACK87,
+        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+        code_theme=ft.MarkdownCodeTheme.MONOKAI,
+        code_style_sheet=ft.MarkdownStyleSheet.block_spacing):
         super().__init__()
         self.alignment = (
             ft.MainAxisAlignment.START if user_or_ai == "ai" else ft.MainAxisAlignment.END
@@ -32,25 +50,55 @@ class Message(ft.Row):
         if user_or_ai == "ai":
             self.controls = [
                 ft.CircleAvatar(bgcolor="blue", content=ft.Text(name, color="white")),
-                MessageContainer(body=text),
+                MessageContainer(
+                    body=text,
+                    bgcolor=bgcolor,
+                    extension_set=extension_set,
+                    code_theme=code_theme,
+                    code_style_sheet=code_style_sheet),
             ]
         else:
             self.controls = [
-                MessageContainer(body=text),
+                MessageContainer(
+                    body=text,
+                    bgcolor=bgcolor,
+                    extension_set=extension_set,
+                    code_theme=code_theme,
+                    code_style_sheet=code_style_sheet),
                 ft.CircleAvatar(bgcolor="green", content=ft.Text(name, color="white")),
             ]
 
 class Chat(ft.ListView):
-    def __init__(self):
+    def __init__(
+        self,
+        bgcolor=ft.Colors.BLACK87,
+        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+        code_theme=ft.MarkdownCodeTheme.MONOKAI,
+        code_style_sheet=ft.MarkdownStyleSheet.block_spacing
+        
+        ):
         super().__init__()
         self.padding = 10
         self.spacing = 10
         self.auto_scroll = True
         self.expand = True  # สำคัญมากให้ขยายเต็มพื้นที่
         self.controls = []
+        self.bg=bgcolor
+        self.extension_set=extension_set
+        self.code_theme=code_theme
+        self.code_style_sheet=code_style_sheet
+
+
 
     def add_message(self, name, text, user_or_ai="user"):
-        self.controls.append(Message(text, name, user_or_ai))
+        self.controls.append(Message(
+            text, 
+            name, 
+            user_or_ai, 
+            bgcolor=self.bg,
+            extension_set=self.extension_set,
+            code_theme=self.code_theme,
+            code_style_sheet=self.code_style_sheet))
         self.update()
         
     def add_stream_message(self, text):
@@ -80,7 +128,10 @@ class Chat(ft.ListView):
         return messages
 
 def main(page: ft.Page):
-    chat = Chat()
+    chat = Chat(
+        # bgcolor=ft.Colors.BROWN,
+        # code_theme=ft.MarkdownCodeTheme.DARK,
+        )
 
     def get(e):
         print(chat.get_message())
