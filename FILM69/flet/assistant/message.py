@@ -1,4 +1,5 @@
 import flet as ft
+import time
 
 class MessageContainer(ft.Container):
     def __init__(self, body):
@@ -51,6 +52,13 @@ class Chat(ft.ListView):
     def add_message(self, name, text, user_or_ai="user"):
         self.controls.append(Message(text, name, user_or_ai))
         self.update()
+        
+    def add_stream_message(self, text):
+        self.controls[-1].controls[1].content.controls[0].value=text
+        self.update()
+        
+
+
 
     def get_message(self):
         messages = []  # reset ใหม่ทุกครั้ง
@@ -89,9 +97,8 @@ def main(page: ft.Page):
 
     # ตัวอย่างข้อความทดสอบ
     chat.add_message("User", "แปลภาษาให้หน่อย", "user")
-    chat.add_message("Ai", 
-        """
-```sh
+    
+    text="""```sh
 pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.7#egg=film69[all]"
 ````
 
@@ -106,8 +113,13 @@ model = FastAutoModel(
     device_map="cuda",
     load_in_4bit=True,
 )
-```
-""", "ai")
+```"""
+    chat.add_message("Ai", "start", "ai")
+    t=""
+    for i in text:
+        t+=i
+        chat.add_stream_message(t)
+        time.sleep(0.001)
 
 
     page.window.width = 393
