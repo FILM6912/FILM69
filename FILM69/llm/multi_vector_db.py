@@ -5,7 +5,7 @@ from em import EmbeddingModel
 from chromadb.config import Settings
 
 
-class DB:
+class MultiVectorDB:
     def __init__(self):
         self.client = chromadb.PersistentClient()
         self.collection = self.client.get_or_create_collection(
@@ -19,16 +19,20 @@ class DB:
         )
         self.em=EmbeddingModel()
         
-    def add(self,documents):
+    def add(self,documents,ids=None):
+        id=ids
         embedding=self.em(documents)
         ids=[]
         embeddings=[]
         metadatas=[]
         docs=[]
         for i,(doc,text_doc) in enumerate(zip(embedding,documents)):
-            random_uuid = uuid.uuid4()
+            if id is not None:
+                random_uuid=id[i]
+            else:
+                random_uuid = uuid.uuid4()
             index=0
-            text_split=self.split_text(text_doc,len(doc))
+            text_split=self._split_text(text_doc,len(doc))
             for j,(embed,text) in enumerate(zip(doc,text_split)):
                 index+=1
                 ids.append(f"{random_uuid}_{index}")
@@ -72,7 +76,7 @@ class DB:
         } for doc_id, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])]
 
         combined_doc=self.collection.get(where={"doc_id": {"$in": list(scores.keys())}})
-        combined_doc = dict(self.merge_documents_by_doc_id(combined_doc).items())
+        combined_doc = dict(self._merge_documents_by_doc_id(combined_doc).items())
 
         res=sorted(combined, key=lambda x: x["distance"])[:n_results]
         
@@ -86,13 +90,14 @@ class DB:
         
         for i in range(len(res)):
             res[i]["distance"]=score_retrieval[i]
+            res[i]["id"]=res[i]["id"].split("_")[0]
             
         res=sorted(combined, key=lambda x: x["distance"],reverse=True)[:n_results]
 
         return res
 
 
-    def split_text(self,text, num_chunks):
+    def _split_text(self,text, num_chunks):
         avg_chunk_length = len(text) // num_chunks
         remainder = len(text) % num_chunks
 
@@ -106,7 +111,7 @@ class DB:
         return chunks
     
     
-    def merge_documents_by_doc_id(self,results):
+    def _merge_documents_by_doc_id(self,results):
         merged_docs = defaultdict(list)
 
         for doc, meta in zip(results["documents"], results["metadatas"]):
@@ -116,9 +121,18 @@ class DB:
         # รวมเป็นข้อความเดียว (ใช้ ''.join ถ้าต่อเนื่อง, หรือ '\n'.join ถ้าทีละบรรทัด)
         return {doc_id: ''.join(chunks) for doc_id, chunks in merged_docs.items()}
     
-    
+    def delete(self,ids:list):
+        self.collection.delete(where={"doc_id": {"$in": ids}})
+        
+    def update(self,ids:list,documents:list):
+        self.delete(ids)
+        self.add(documents,ids)
+
 if __name__ == "__main__":
-    db=DB()
+    db=MultiVectorDB()
     data=["สวัสดี","คุณคือ"]
     db.add(documents=data)
     res =db.query("Communication Protocol")
+    
+    db.update(["4a8af005-4f6e-4ff1-a170-b7ced4eb2a47"],["5555"])
+    db.delete(["e718654c-79fa-49ac-afde-89d012eabcac"])
