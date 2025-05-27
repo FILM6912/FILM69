@@ -7,8 +7,8 @@ import torch
 torch.set_float32_matmul_precision('high')
 
 class MultiVectorDB:
-    def __init__(self):
-        self.client = chromadb.PersistentClient()
+    def __init__(self,db_name="embedding_DB"):
+        self.client = chromadb.PersistentClient(db_name)
         self.collection = self.client.get_or_create_collection(
             name="vector",
             embedding_function=None,
