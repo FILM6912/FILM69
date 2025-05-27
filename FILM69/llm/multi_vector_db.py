@@ -3,7 +3,8 @@ import uuid
 from collections import defaultdict
 from em import EmbeddingModel
 from chromadb.config import Settings
-
+import torch
+torch.set_float32_matmul_precision('high')
 
 class MultiVectorDB:
     def __init__(self):
@@ -17,6 +18,7 @@ class MultiVectorDB:
                 "hnsw:space": "l2"
             }
         )
+        
         self.em = EmbeddingModel()
 
     def add(self, documents: list[str], ids: list[str] = None, metadatas: list[dict] = None):
@@ -50,45 +52,49 @@ class MultiVectorDB:
         )
 
     def query(self, query_text: str, n_results=10, max=1000):
-        embedding = self.em(query_text)[0]
-        results = self.collection.query(query_embeddings=embedding, n_results=max)
-        distances, ids = results["distances"][0], results["ids"][0]
+        try:
+            embedding = self.em(query_text)[0]
+            results = self.collection.query(query_embeddings=embedding, n_results=max)
+            distances, ids = results["distances"][0], results["ids"][0]
 
-        scores = {}
-        for doc_id, dist in zip(ids, distances):
-            prefix = doc_id.split("_")[0]
-            scores[prefix] = min(dist, scores.get(prefix, float("inf")))
+            scores = {}
+            for doc_id, dist in zip(ids, distances):
+                prefix = doc_id.split("_")[0]
+                scores[prefix] = min(dist, scores.get(prefix, float("inf")))
 
-        target_ids = [f"{prefix}_1" for prefix in scores]
-        res = self.collection.get(ids=target_ids)
+            target_ids = [f"{prefix}_1" for prefix in scores]
+            res = self.collection.get(ids=target_ids)
 
-        distance_map = {f"{k}_1": v for k, v in scores.items()}
-        combined = [{
-            "id": doc_id,
-            "distance": distance_map.get(doc_id),
-            "document": doc,
-            "metadata": meta
-        } for doc_id, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])]
+            distance_map = {f"{k}_1": v for k, v in scores.items()}
+            combined = [{
+                "id": doc_id,
+                "distance": distance_map.get(doc_id),
+                "document": doc,
+                "metadata": meta
+            } for doc_id, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])]
 
-        combined_doc = self.collection.get(where={"doc_id": {"$in": list(scores.keys())}})
-        combined_doc = dict(self._merge_documents_by_doc_id(combined_doc, metadata=False).items())
+            combined_doc = self.collection.get(where={"doc_id": {"$in": list(scores.keys())}})
+            combined_doc = dict(self._merge_documents_by_doc_id(combined_doc, metadata=False).items())
 
-        res = sorted(combined, key=lambda x: x["distance"])[:n_results]
+            res = sorted(combined, key=lambda x: x["distance"])[:n_results]
 
-        all_docs = []
-        for i in range(len(res)):
-            doc_id_prefix = res[i]["id"].split("_")[0]
-            res[i]["document"] = combined_doc[doc_id_prefix]
-            all_docs.append(res[i]["document"])
+            all_docs = []
+            for i in range(len(res)):
+                doc_id_prefix = res[i]["id"].split("_")[0]
+                res[i]["document"] = combined_doc[doc_id_prefix]
+                all_docs.append(res[i]["document"])
 
-        score_retrieval = self.em.score_retrieval([embedding], self.em(all_docs))[0]
+            score_retrieval = self.em.score_retrieval([embedding], self.em(all_docs))[0]
 
-        for i in range(len(res)):
-            res[i]["distance"] = score_retrieval[i]
-            res[i]["id"] = res[i]["id"].split("_")[0]
+            for i in range(len(res)):
+                res[i]["distance"] = score_retrieval[i]
+                res[i]["id"] = res[i]["id"].split("_")[0]
 
-        res = sorted(res, key=lambda x: x["distance"], reverse=True)[:n_results]
-        return res
+            res = sorted(res, key=lambda x: x["distance"], reverse=True)[:n_results]
+            return res
+        except:
+            return []
+
 
     def _split_text(self, text, num_chunks):
         avg_chunk_length = len(text) // num_chunks
