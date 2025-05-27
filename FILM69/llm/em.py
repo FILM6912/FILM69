@@ -1,18 +1,21 @@
 import torch
 from PIL import Image
-from transformers import ColPaliForRetrieval,AutoProcessor
+# from transformers import ColPaliForRetrieval,AutoProcessor
+from transformers import ColQwen2ForRetrieval,AutoProcessor
 import numpy as np
 
 class EmbeddingModel:
     def __init__(
         self,
-        model_path = "vidore/colpali-v1.3-hf",
+        model_path = "vidore/colqwen2-v1.0-hf",
         torch_dtype=torch.bfloat16,
         device_map="cuda:0", 
         **kwargs
     ):
-        self.model = ColPaliForRetrieval.from_pretrained(model_path,torch_dtype=torch_dtype,device_map=device_map, **kwargs)
+        self.model = ColQwen2ForRetrieval.from_pretrained(model_path,torch_dtype=torch_dtype,device_map=device_map, **kwargs)
         self.processor = AutoProcessor.from_pretrained(model_path,use_fast=True)
+
+        self.model=torch.compile(self.model)
 
     def __call__(self,text=None,image=None,return_np=True):
         if text is not None and image is not None:
