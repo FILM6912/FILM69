@@ -22,7 +22,7 @@ def run_index(step,len_files):
     run_index=[]
     while index<=len_files:
         lass=index
-        index+=100
+        index+=step
         run_index.append([lass,len_files if index>=len_files else index])
     
     return run_index
