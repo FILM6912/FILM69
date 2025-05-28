@@ -1,5 +1,5 @@
 import sys,os
-from ...DisPrint import dis_print
+from ...tools.DisPrint import dis_print
 with dis_print():
     from .fast_llm import FastLLM
     from .fast_vision import FastVLLM

@@ -1,4 +1,4 @@
-from ..DisPrint import dis_print
+from ..tools.DisPrint import dis_print
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
