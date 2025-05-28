@@ -25,7 +25,7 @@ def run_index(step,len_files):
         index+=step
         run_index.append([lass,len_files if index>=len_files else index])
     
-    return run_index
+    return run_index[:-1]
 
 
 __all__ = [
