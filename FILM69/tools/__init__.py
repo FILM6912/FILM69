@@ -1,5 +1,5 @@
 from .pydantic_from_json import pydantic_from_json
-from DisPrint import dis_print
+from .DisPrint import dis_print
 
 def torch_parameters_model(model):
     num = sum(p.numel() for p in model.parameters())
