@@ -127,7 +127,7 @@ setup(
         "console_scripts": [
             "tts=FILM69.tts.f5_tts.infer.infer_cli:main",
             "tts_train_ui=FILM69.tts.f5_tts.train.finetune_gradio:main",
-            "FILM69_AI=FILM69.ui.assistant:main"
+            "FILM69_AI=FILM69.ui.assistant.app:main"
         ],
     },
     extras_require={
