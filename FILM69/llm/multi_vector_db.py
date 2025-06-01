@@ -1,150 +1,279 @@
 import chromadb
-import uuid
-from collections import defaultdict
-from em import EmbeddingModel
-from chromadb.config import Settings
 import torch
-torch.set_float32_matmul_precision('high')
+import random
+from PIL import Image
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+from transformers.models.colpali import ColPaliForRetrieval, ColPaliProcessor
+from datasets import load_dataset
+import torch
+from collections import Counter
+import matplotlib.pyplot as plt
+import time
 
-class MultiVectorDB:
-    def __init__(self,db_name="embedding_DB"):
-        self.client = chromadb.PersistentClient(db_name)
-        self.collection = self.client.get_or_create_collection(
-            name="vector",
-            embedding_function=None,
-            metadata={
-                "hnsw:M": 500,
-                "hnsw:construction_ef": 600,
-                "hnsw:space": "l2"
+def load_data(sample_size=500):
+    """Load and sample the dataset."""
+    ds = load_dataset("vidore/docvqa_test_subsampled", split="test")
+    
+    sample_ds = ds.select(range(sample_size))
+    
+    return sample_ds
+
+
+def setup_model_and_collection():
+    """Setup the model, processor, and ChromaDB collection."""
+    client = chromadb.PersistentClient()
+    collection = client.get_or_create_collection(
+        name="multivec",
+        configuration={
+            "hnsw": {
+                "space": "cosine",
             }
+        })
+    
+    model_name = "vidore/colpali-v1.3-hf"
+    
+    device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.float32 if device == "mps" else torch.bfloat16
+    
+    print(f"Using device: {device}, dtype: {dtype}")
+    
+    model = ColPaliForRetrieval.from_pretrained(
+        model_name,
+        torch_dtype=dtype,
+        device_map=device,
+    ).eval()
+    
+    processor = ColPaliProcessor.from_pretrained(model_name, use_fast=True)
+    
+    return model, processor, collection, device
+
+
+def embed_and_insert(sample_ds, model, processor, collection: chromadb.Collection):
+    """Process images, generate embeddings, and insert into ChromaDB."""
+    num_items = len(sample_ds)
+    if collection.count() >= num_items*1024:
+        return None
+    
+    for i, item in enumerate(sample_ds):
+        image = item['image']
+        doc_id = item['docId']
+        
+        res = collection.get(
+            where={"doc_id": doc_id},
+            include=["documents"],
         )
         
-        self.em = EmbeddingModel()
-
-    def add(self, documents: list[str], ids: list[str] = None, metadatas: list[dict] = None):
-        id = ids
-        meta = metadatas
-        embedding = self.em(documents)
-        ids, embeddings, metadatas, docs = [], [], [], []
-
-        if meta is None:
-            meta = [None] * len(documents)
-
-        for i, (doc, text_doc, meta_data) in enumerate(zip(embedding, documents, meta)):
-            random_uuid = id[i] if id is not None else uuid.uuid4()
-            index = 0
-            text_split = self._split_text(text_doc, len(doc))
-            for j, (embed, text) in enumerate(zip(doc, text_split)):
-                index += 1
-                ids.append(f"{random_uuid}_{index}")
-                embeddings.append(embed)
-                try:
-                    metadatas.append({"doc_id": f"{random_uuid}", **meta_data})
-                except:
-                    metadatas.append({"doc_id": f"{random_uuid}"})
-                docs.append(text)
-
-        self.collection.add(
-            ids=ids,
-            embeddings=embeddings,
+        
+        if len(res["ids"]) > 0:
+            continue
+        
+        batch_images = processor(images=[image]).to(model.device)
+        
+        with torch.no_grad():
+            image_embeddings = model(**batch_images)
+                        
+        embedding_ids = []
+        embedding_vectors = []
+        metadatas = []
+        
+        for patch_idx, embedding in enumerate(image_embeddings.embeddings[0]):
+            embedding_id = f"doc_{doc_id}_patch_{patch_idx}"
+            embedding_vector = embedding.float().cpu().numpy().tolist()
+            metadata = {
+                'doc_id': int(doc_id),
+                'patch_index': patch_idx
+            }
+            embedding_ids.append(embedding_id)
+            embedding_vectors.append(embedding_vector)
+            metadatas.append(metadata)
+            
+        collection.add(
+            ids=embedding_ids,
+            embeddings=embedding_vectors,
             metadatas=metadatas,
-            documents=docs
         )
 
-    def query(self, query_text: str, n_results=10, max=1000):
-        try:
-            embedding = self.em(query_text)[0]
-            results = self.collection.query(query_embeddings=embedding, n_results=max)
-            distances, ids = results["distances"][0], results["ids"][0]
+def compute_maxsim_with_patch(query_embeddings: torch.Tensor, doc_embeddings: torch.Tensor, top_k=25):
+    """
+    Compute MaxSim score and most relevant patch indices.
 
-            scores = {}
-            for doc_id, dist in zip(ids, distances):
-                prefix = doc_id.split("_")[0]
-                scores[prefix] = min(dist, scores.get(prefix, float("inf")))
+    Args:
+        query_embeddings: (num_query_tokens, dim)
+        doc_embeddings: (num_patches, dim)
+        top_k: number of top patches to return
 
-            target_ids = [f"{prefix}_1" for prefix in scores]
-            res = self.collection.get(ids=target_ids)
+    Returns:
+        - maxsim_score: float
+        - top_patch_indices: list of int (most frequently aligned patches)
+    """
+    query_embeddings = torch.nn.functional.normalize(query_embeddings, p=2, dim=-1)
+    doc_embeddings = torch.nn.functional.normalize(doc_embeddings, p=2, dim=-1)
 
-            distance_map = {f"{k}_1": v for k, v in scores.items()}
-            combined = [{
-                "id": doc_id,
-                "distance": distance_map.get(doc_id),
-                "document": doc,
-                "metadata": meta
-            } for doc_id, doc, meta in zip(res["ids"], res["documents"], res["metadatas"])]
+    sims = torch.matmul(query_embeddings, doc_embeddings.T)
 
-            combined_doc = self.collection.get(where={"doc_id": {"$in": list(scores.keys())}})
-            combined_doc = dict(self._merge_documents_by_doc_id(combined_doc, metadata=False).items())
+    max_vals, max_indices = sims.max(dim=1)
 
-            res = sorted(combined, key=lambda x: x["distance"])[:n_results]
+    maxsim_score = max_vals.mean().item()
 
-            all_docs = []
-            for i in range(len(res)):
-                doc_id_prefix = res[i]["id"].split("_")[0]
-                res[i]["document"] = combined_doc[doc_id_prefix]
-                all_docs.append(res[i]["document"])
+    patch_counts = Counter(max_indices.tolist())
+    top_patch_indices = [patch_idx for patch_idx, _ in patch_counts.most_common(top_k)]
 
-            score_retrieval = self.em.score_retrieval([embedding], self.em(all_docs))[0]
-
-            for i in range(len(res)):
-                res[i]["distance"] = score_retrieval[i]
-                res[i]["id"] = res[i]["id"].split("_")[0]
-
-            res = sorted(res, key=lambda x: x["distance"], reverse=True)[:n_results]
-            return res
-        except:
-            return []
+    return maxsim_score, top_patch_indices
 
 
-    def _split_text(self, text, num_chunks):
-        avg_chunk_length = len(text) // num_chunks
-        remainder = len(text) % num_chunks
+def query_and_rank(rand_query, model, processor, collection, device, num_results=4, fetch_factor=0.5):
+    """Query the collection and rank documents using MaxSim."""
+    
+    processor_query = processor(text=[rand_query]).to(device)
+    
+    with torch.no_grad():
+        query_embeddings = model(**processor_query)
+            
+    # this overfetches, then we will do maxsim on the unique set of doc ids to get the top num_results of documents
+    results = collection.query(
+        query_embeddings=query_embeddings.embeddings[0].tolist(),
+        n_results=int(num_results*fetch_factor),
+        include=["metadatas"],
+    )
+        
+    candidate_docs = set()
+    
+    if results["metadatas"] is not None:
+        for metadatas in results["metadatas"]:
+            for metadata in metadatas:
+                candidate_docs.add(metadata['doc_id'])
+    
+    print(f"Found {len(candidate_docs)} candidate documents")
+    
+    doc_scores = []
+    
+    for doc_id in candidate_docs:
+        doc_data = collection.get(
+            where={"doc_id": doc_id},
+            include=["embeddings", "metadatas", "documents"],
+        )
+        
+        doc_embeddings = torch.tensor(doc_data["embeddings"], dtype=query_embeddings.embeddings.dtype, device=device)
+        
+        score, top_patch_indices = compute_maxsim_with_patch(query_embeddings.embeddings[0], doc_embeddings)
+        
+        doc_scores.append({
+            "doc_id": doc_id,
+            "score": score,
+            "top_patch_indices": top_patch_indices
+        })
+    
+    top_docs = sorted(doc_scores, key=lambda x: x["score"], reverse=True)[:num_results]
+    
+    return top_docs, rand_query
 
-        chunks, start = [], 0
-        for i in range(num_chunks):
-            end = start + avg_chunk_length + (1 if i < remainder else 0)
-            chunks.append(text[start:end])
-            start = end
-        return chunks
-
-    def _merge_documents_by_doc_id(self, results, metadata=True):
-        merged_docs = defaultdict(list)
-        merged_metas = {}
-
-        for doc, meta in zip(results["documents"], results["metadatas"]):
-            doc_id = meta["doc_id"]
-            merged_docs[doc_id].append(doc)
-            if doc_id not in merged_metas:
-                merged_metas[doc_id] = meta
-
-        if metadata:
-            return [
-                {
-                    "id": doc_id,
-                    "text": ''.join(chunks),
-                    "metadata": merged_metas[doc_id]
-                }
-                for doc_id, chunks in merged_docs.items()
-            ]
+def draw_patch_overlay(image: Image.Image, patch_indices: list, grid_size=None, total_patches=None):
+    """
+    Draws semi-transparent overlays on the patches corresponding to patch_indices.
+    
+    Args:
+        image (PIL.Image): Original image.
+        patch_indices (list): List of patch indices (0-indexed).
+        grid_size (int, optional): Grid size used for patching. If None, will be calculated from total_patches.
+        total_patches (int, optional): Total number of patches. Used to calculate grid_size if not provided.
+    
+    Returns:
+        matplotlib.figure.Figure: Figure with overlay.
+    """
+    width, height = image.size
+    
+    # colpali has 6 special tokens at the beginning, so image patches start at index 6
+    image_patch_offset = 6
+    actual_image_patches = total_patches - image_patch_offset if total_patches else 1024
+    
+    # Calculate grid size based on actual number of image patches
+    if grid_size is None:
+        if total_patches is not None:
+            # Calculate grid size from image patches only (excluding first 6 special tokens)
+            import math
+            grid_size = int(math.sqrt(actual_image_patches))
+            print(f"Calculated grid_size {grid_size} from {actual_image_patches} image patches (total patches: {total_patches}, offset: {image_patch_offset})")
         else:
-            return {doc_id: ''.join(chunks) for doc_id, chunks in merged_docs.items()}
+            # Fallback to estimated grid size
+            target_patch_size = 14 
+            grid_size = min(width // target_patch_size, height // target_patch_size, 32)
+            grid_size = max(grid_size, 8)
+            print(f"Using estimated grid_size {grid_size}")
+    
+    patch_w = width / grid_size
+    patch_h = height / grid_size
 
-    def delete(self, ids: list[str]):
-        self.collection.delete(where={"doc_id": {"$in": ids}})
+    fig, ax = plt.subplots(figsize=(10, 10))
+    ax.imshow(image)
+    
+    for i, patch_index in enumerate(patch_indices):
+        if patch_index < image_patch_offset:
+            print(f"Skipping special token at index {patch_index}")
+            continue
+            
+        image_patch_index = patch_index - image_patch_offset
+        
+        row = image_patch_index // grid_size
+        col = image_patch_index % grid_size
 
-    def update(self, ids: list[str], documents: list[str]):
-        self.delete(ids)
-        self.add(documents, ids)
+        x0 = col * patch_w
+        y0 = row * patch_h
+        
+        # Use different colors/alpha for different ranks
+        alpha = max(0.1, 0.7 - (i * 0.02))  # Fade out lower ranked patches
+        color = 'red' if i == 0 else 'orange' if i < 5 else 'yellow'
+        
+        rect = patches.Rectangle((x0, y0), patch_w, patch_h,
+                               linewidth=2, edgecolor=color, facecolor=color, alpha=alpha)
+        ax.add_patch(rect)
+    
+    ax.set_title(f"Top {len(patch_indices)} Patches Highlighted (Grid: {grid_size}x{grid_size}, Image patches: {actual_image_patches})")
+    ax.axis('off')
+    
+    plt.tight_layout()
+    plt.savefig("patch.png", dpi=150, bbox_inches='tight')
 
-    def get(self, ids: list[str] = None, **kwargs):
-        return self._merge_documents_by_doc_id(self.collection.get(ids=ids, **kwargs))
+    plt.close()
 
 
-if __name__ == "__main__":
-    db = MultiVectorDB()
-    data = ["สวัสดี", "คุณคือ"]
-    db.add(documents=data)
-    res = db.query("Communication Protocol")
+def main():
+    """Main execution function."""
+    sample_ds = load_data(sample_size=500)
+    
+    model, processor, collection, device = setup_model_and_collection()
+    
+    start_time = time.time()
+    embed_and_insert(sample_ds, model, processor, collection)
+    end_time = time.time()
+    print(f"Embedding and inserting data took {end_time - start_time} seconds")
+        
+    top_docs, query_text = query_and_rank(
+        rand_query=random.choice(sample_ds)['query'], 
+        model=model, 
+        processor=processor, 
+        collection=collection, 
+        device=device
+        )
+    
+    print(f"Querying for: {query_text}")
+    
+    for doc in top_docs:
+        print(f"Doc {doc['doc_id']} | Score: {doc['score']:.4f} | Top Patches: {doc['top_patch_indices']}")
+        
+    top_doc = top_docs[0]
+    doc_id = top_doc["doc_id"]
+    top_patches = top_doc["top_patch_indices"]
+    
+    image = next(item['image'] for item in sample_ds if item['docId'] == doc_id)
+    
+    doc_data = collection.get(
+        where={"doc_id": doc_id},
+    )
+    actual_total_patches = len(doc_data["ids"])
+    print(f"Actual total patches: {actual_total_patches}")
+    draw_patch_overlay(image, top_patches, total_patches=actual_total_patches)
 
-    db.update(["4a8af005-4f6e-4ff1-a170-b7ced4eb2a47"], ["5555"])
-    db.delete(["e718654c-79fa-49ac-afde-89d012eabcac"])
+
+if __name__ == "__main__": 
+    main()
