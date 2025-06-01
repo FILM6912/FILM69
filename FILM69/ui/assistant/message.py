@@ -106,8 +106,6 @@ class Chat(ft.ListView):
         self.update()
         
 
-
-
     def get_message(self):
         messages = []  # reset ใหม่ทุกครั้ง
         for i in self.controls:
@@ -118,13 +116,21 @@ class Chat(ft.ListView):
                         {"type": "text", "text": i.controls[1].content.controls[0].value},
                     ]
                 })
-            else:
+            elif i.user_or_ai == "user":
                 messages.append({
                     "role": "user",
                     "content": [
                         {"type": "text", "text": i.controls[0].content.controls[0].value},
                     ]
                 })
+            elif i.user_or_ai == "system":
+                messages.append({
+                    "role": "system",
+                    "content":[
+                        {"type": "text", "text": i.controls[0].content.controls[0].value},
+                    ]
+                })
+            
         return messages
 
 def main(page: ft.Page):
