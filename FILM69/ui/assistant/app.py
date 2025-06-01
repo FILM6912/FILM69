@@ -103,9 +103,12 @@ class App(Ui_app):
                 self.page.update()
                 self.send_message_click(None)
 
-def main(page:Page):
-    page=App(page)
+def run(page:Page):
+    App(page)
+
+def main():
+    app(run)
 
 if __name__=="__main__":
     # app(main,port=7860,view=AppView.FLET_APP_WEB)
-    app(main)
+    app(run)
