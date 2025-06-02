@@ -125,7 +125,7 @@ if __name__ == "__main__":
     tools_server=[{"name":"sse","url":"http://localhost:8000/sse"}]
     
     
-    x=Agent(model=llm,memory=False,tools=tools_server)
+    x=Agent(model=llm,memory=False,tools_server=tools_server)
     for event in x.stream("1+66="):
         print(event[list(event.keys())[0]]["messages"][-1].pretty_print())
         
