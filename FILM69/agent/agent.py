@@ -10,16 +10,19 @@ from langgraph.checkpoint.memory import MemorySaver
 import nest_asyncio
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
 
 nest_asyncio.apply()
 memory = MemorySaver()
 
 
+class InputListSum(BaseModel):
+    numbers: list[int] = Field(default_factory=list)
 
-@tool()
-def list_sum(x=list[int]):
+@tool("list_sum",args_schema=InputListSum)
+def list_sum(numbers=list[int]):
     "รวมค่าใน list"
-    return sum(x)
+    return sum(numbers)
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
@@ -38,15 +41,18 @@ class Agent:
             for i in tools_server:
                 await self.mcp_client.connect_to_server_via_sse(i["name"], url=i["url"])
             
-            mcp_tools = self.mcp_client.get_tools()
-            llm_with_tools = model.bind_tools(mcp_tools+tools)
+            mcp_tools = self.mcp_client.get_tools()+tools
+            llm_with_tools = model.bind_tools(mcp_tools)
             
         elif tools:
-            llm_with_tools = model.bind_tools(tools)
+            mcp_tools=tools
+            llm_with_tools = model.bind_tools(mcp_tools)
         elif tools_server:
-            llm_with_tools = model.bind_tools(tools_server)
+            mcp_tools=tools_server
+            llm_with_tools = model.bind_tools(mcp_tools)
         else:
-            llm_with_tools = model.bind_tools([list_sum])
+            mcp_tools=[list_sum]
+            llm_with_tools = model.bind_tools(mcp_tools)
         
         graph_builder = StateGraph(State)
         
