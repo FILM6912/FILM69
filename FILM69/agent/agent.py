@@ -9,27 +9,44 @@ from typing_extensions import TypedDict
 from langgraph.checkpoint.memory import MemorySaver
 import nest_asyncio
 from langchain_openai import ChatOpenAI
+from langchain_core.tools import tool
 
 nest_asyncio.apply()
 memory = MemorySaver()
-# from utils.llm import llm 
-# model = llm
+
+
+
+@tool()
+def list_sum(x=list[int]):
+    "รวมค่าใน list"
+    return sum(x)
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 class Agent:
-    def __init__(self,model=None,tools:list[dict[str]]=[{"name":"sse","url":"http://localhost:8000/sse"}],memory=True):
+    def __init__(self,model=None,tools_server:list[dict[str]]=None,memory:bool=True,tools:list=None):
+        'model=None,tools_server:list[dict[str]]=[{"name":"sse","url":"http://localhost:8000/sse"}],memory:bool=True,tools:list=None'
+        
         self.mcp_client = MultiServerMCPClient()
-        self.app = asyncio.run(self.make_graph(model,memory,tools))
+        self.app = asyncio.run(self.make_graph(model,memory,tools_server,tools))
         
-    async def make_graph(self,model,used_memory,tools):
+    async def make_graph(self,model,used_memory,tools_server,tools):
         
-        for i in tools:
-            await self.mcp_client.connect_to_server_via_sse(i["name"], url=i["url"])
         
-        mcp_tools = self.mcp_client.get_tools()
-        llm_with_tools = model.bind_tools(mcp_tools)
+        if tools and tools_server:
+            for i in tools_server:
+                await self.mcp_client.connect_to_server_via_sse(i["name"], url=i["url"])
+            
+            mcp_tools = self.mcp_client.get_tools()
+            llm_with_tools = model.bind_tools(mcp_tools+tools)
+            
+        elif tools:
+            llm_with_tools = model.bind_tools(tools)
+        elif tools_server:
+            llm_with_tools = model.bind_tools(tools_server)
+        else:
+            llm_with_tools = model.bind_tools([list_sum])
         
         graph_builder = StateGraph(State)
         
