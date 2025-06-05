@@ -247,7 +247,7 @@ def main():
     embed_and_insert(sample_ds, model, processor, collection)
     end_time = time.time()
     print(f"Embedding and inserting data took {end_time - start_time} seconds")
-        
+
     top_docs, query_text = query_and_rank(
         rand_query=random.choice(sample_ds)['query'], 
         model=model, 
@@ -277,3 +277,4 @@ def main():
 
 if __name__ == "__main__": 
     main()
+    
