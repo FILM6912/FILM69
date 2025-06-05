@@ -48,7 +48,7 @@ class FastVLLM:
 
     def save_model(self, model_name, save_method="merged_16bit", **kwargs):
         """Saves the model, handling different quantization methods."""
-        if self.load_in_4bit or self.load_in_8bit:
+        if self.load_in_4bit or self.load_in_8bit or save_method == "16bit":
             try:
                 self.model.save_pretrained_merged(model_name, self.processor, save_method=save_method, **kwargs)
             except:
