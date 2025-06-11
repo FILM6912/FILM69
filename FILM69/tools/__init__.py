@@ -47,25 +47,30 @@ def torch_get_input_shape(model):
     if first_layer is None:
         return "ไม่พบเลเยอร์ที่ระบุ input shape ได้", None
     
+    # ตรวจสอบ device และ dtype จากโมเดล
+    device = next(model.parameters()).device
+    dtype = next(model.parameters()).dtype
+    
+    # สร้างตัวอย่าง tensor โดยให้สอดคล้องกับ device และ dtype ของโมเดล
     if isinstance(first_layer, nn.Conv2d):
         # สำหรับ Conv2d: input shape = (batch_size, in_channels, height, width)
         shape_str = f"(batch_size, {first_layer.in_channels}, height, width)"
-        example = torch.randn(1, first_layer.in_channels, 224, 224)  # ขนาดภาพตัวอย่าง 224x224
+        example = torch.randn(1, first_layer.in_channels, 224, 224, device=device, dtype=dtype)
         return shape_str, example
     elif isinstance(first_layer, nn.Linear):
         # สำหรับ Linear: input shape = (batch_size, in_features)
         shape_str = f"(batch_size, {first_layer.in_features})"
-        example = torch.randn(1, first_layer.in_features)  # vector ตัวอย่าง
+        example = torch.randn(1, first_layer.in_features, device=device, dtype=dtype)
         return shape_str, example
     elif isinstance(first_layer, nn.Conv1d):
         # สำหรับ Conv1d: input shape = (batch_size, in_channels, length)
         shape_str = f"(batch_size, {first_layer.in_channels}, length)"
-        example = torch.randn(1, first_layer.in_channels, 128)  # ความยาวตัวอย่าง 128
+        example = torch.randn(1, first_layer.in_channels, 128, device=device, dtype=dtype)
         return shape_str, example
     elif isinstance(first_layer, nn.Conv3d):
         # สำหรับ Conv3d: input shape = (batch_size, in_channels, depth, height, width)
         shape_str = f"(batch_size, {first_layer.in_channels}, depth, height, width)"
-        example = torch.randn(1, first_layer.in_channels, 16, 224, 224)  # depth=16 ตัวอย่าง
+        example = torch.randn(1, first_layer.in_channels, 16, 224, 224, device=device, dtype=dtype)
         return shape_str, example
     else:
         return "ไม่สามารถระบุ input shape ได้", None
