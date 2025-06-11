@@ -26,7 +26,6 @@ def torch_parameters(model):
         'trainable_raw': trainable_params
     }
     
-
 def torch_get_input_shape(model):
     """
     ตรวจสอบ input shape ที่โมเดลคาดหวังจากเลเยอร์แรก และคืนค่า shape พร้อมตัวอย่าง tensor
@@ -35,7 +34,7 @@ def torch_get_input_shape(model):
     Returns:
         tuple: (input_shape_str, example_tensor)
             - input_shape_str: str อธิบาย input shape เช่น "(batch_size, 3, height, width)"
-            - example_tensor: torch.Tensor ตัวอย่าง เช่น torch.randn(1, 3, 224, 224)
+            - example_tensor: torch.Tensor ตัวอย่าง เช่น torch.randint(0, 256, (1, 3, 224, 224))
     """
     first_layer = None
     # หาเลเยอร์แรกที่เป็น nn.Module
@@ -43,37 +42,32 @@ def torch_get_input_shape(model):
         if isinstance(layer, (nn.Conv2d, nn.Linear, nn.Conv1d, nn.Conv3d)):
             first_layer = layer
             break
-    
+
     if first_layer is None:
         return "ไม่พบเลเยอร์ที่ระบุ input shape ได้", None
-    
-    # ตรวจสอบ device และ dtype จากโมเดล
+
+    # ตรวจสอบ device จากโมเดล
     device = next(model.parameters()).device
-    dtype = next(model.parameters()).dtype
-    
-    # สร้างตัวอย่าง tensor โดยให้สอดคล้องกับ device และ dtype ของโมเดล
+
     if isinstance(first_layer, nn.Conv2d):
-        # สำหรับ Conv2d: input shape = (batch_size, in_channels, height, width)
         shape_str = f"(batch_size, {first_layer.in_channels}, height, width)"
-        example = torch.randn(1, first_layer.in_channels, 224, 224, device=device, dtype=dtype)
+        example = torch.randint(0, 256, (1, first_layer.in_channels, 224, 224), device=device)
         return shape_str, example
     elif isinstance(first_layer, nn.Linear):
-        # สำหรับ Linear: input shape = (batch_size, in_features)
         shape_str = f"(batch_size, {first_layer.in_features})"
-        example = torch.randn(1, first_layer.in_features, device=device, dtype=dtype)
+        example = torch.randint(0, 256, (1, first_layer.in_features), device=device)
         return shape_str, example
     elif isinstance(first_layer, nn.Conv1d):
-        # สำหรับ Conv1d: input shape = (batch_size, in_channels, length)
         shape_str = f"(batch_size, {first_layer.in_channels}, length)"
-        example = torch.randn(1, first_layer.in_channels, 128, device=device, dtype=dtype)
+        example = torch.randint(0, 256, (1, first_layer.in_channels, 128), device=device)
         return shape_str, example
     elif isinstance(first_layer, nn.Conv3d):
-        # สำหรับ Conv3d: input shape = (batch_size, in_channels, depth, height, width)
         shape_str = f"(batch_size, {first_layer.in_channels}, depth, height, width)"
-        example = torch.randn(1, first_layer.in_channels, 16, 224, 224, device=device, dtype=dtype)
+        example = torch.randint(0, 256, (1, first_layer.in_channels, 16, 224, 224), device=device)
         return shape_str, example
     else:
         return "ไม่สามารถระบุ input shape ได้", None
+
     
 def run_index(step,len_files):
     index=0
