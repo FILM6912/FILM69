@@ -1,5 +1,6 @@
 from .pydantic_from_json import pydantic_from_json
 import torch.nn as nn
+import torch
 
 def torch_parameters(model):
     total_params = sum(p.numel() for p in model.parameters())
@@ -28,11 +29,13 @@ def torch_parameters(model):
 
 def torch_get_input_shape(model):
     """
-    ตรวจสอบ input shape ที่โมเดลคาดหวังจากเลเยอร์แรก
+    ตรวจสอบ input shape ที่โมเดลคาดหวังจากเลเยอร์แรก และคืนค่า shape พร้อมตัวอย่าง tensor
     Args:
         model: PyTorch model (nn.Module)
     Returns:
-        tuple: คำอธิบาย input shape ที่คาดหวัง
+        tuple: (input_shape_str, example_tensor)
+            - input_shape_str: str อธิบาย input shape เช่น "(batch_size, 3, height, width)"
+            - example_tensor: torch.Tensor ตัวอย่าง เช่น torch.randn(1, 3, 224, 224)
     """
     first_layer = None
     # หาเลเยอร์แรกที่เป็น nn.Module
@@ -42,23 +45,31 @@ def torch_get_input_shape(model):
             break
     
     if first_layer is None:
-        return "ไม่พบเลเยอร์ที่ระบุ input shape ได้"
+        return "ไม่พบเลเยอร์ที่ระบุ input shape ได้", None
     
     if isinstance(first_layer, nn.Conv2d):
         # สำหรับ Conv2d: input shape = (batch_size, in_channels, height, width)
-        return f"(batch_size, {first_layer.in_channels}, height, width)"
+        shape_str = f"(batch_size, {first_layer.in_channels}, height, width)"
+        example = torch.randn(1, first_layer.in_channels, 224, 224)  # ขนาดภาพตัวอย่าง 224x224
+        return shape_str, example
     elif isinstance(first_layer, nn.Linear):
         # สำหรับ Linear: input shape = (batch_size, in_features)
-        return f"(batch_size, {first_layer.in_features})"
+        shape_str = f"(batch_size, {first_layer.in_features})"
+        example = torch.randn(1, first_layer.in_features)  # vector ตัวอย่าง
+        return shape_str, example
     elif isinstance(first_layer, nn.Conv1d):
         # สำหรับ Conv1d: input shape = (batch_size, in_channels, length)
-        return f"(batch_size, {first_layer.in_channels}, length)"
+        shape_str = f"(batch_size, {first_layer.in_channels}, length)"
+        example = torch.randn(1, first_layer.in_channels, 128)  # ความยาวตัวอย่าง 128
+        return shape_str, example
     elif isinstance(first_layer, nn.Conv3d):
         # สำหรับ Conv3d: input shape = (batch_size, in_channels, depth, height, width)
-        return f"(batch_size, {first_layer.in_channels}, depth, height, width)"
+        shape_str = f"(batch_size, {first_layer.in_channels}, depth, height, width)"
+        example = torch.randn(1, first_layer.in_channels, 16, 224, 224)  # depth=16 ตัวอย่าง
+        return shape_str, example
     else:
-        return "ไม่สามารถระบุ input shape ได้"
-
+        return "ไม่สามารถระบุ input shape ได้", None
+    
 def run_index(step,len_files):
     index=0
     run_index=[]
