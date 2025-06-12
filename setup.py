@@ -58,7 +58,9 @@ LLM=[
     "huggingface-hub",
     "langchain-core",
     "unsloth",
-    "unsloth-zoo @ git+https://github.com/rupaut98/unsloth-zoo.git@fix-gemma-vision"
+    "unsloth-zoo @ git+https://github.com/rupaut98/unsloth-zoo.git@fix-gemma-vision",
+    "langchain_google_genai",
+    "keyboard"
 ]
 
 ubuntu=[
