@@ -113,7 +113,7 @@ class MessageCard:
                 ft.Row([
                     ft.Markdown(f"### {self.user_name}", selectable=True,),
                     ft.CircleAvatar(
-                        content=ft.Text("U", color="#ffffff", weight=ft.FontWeight.BOLD),
+                        content=ft.Text(self.user_name[0].upper(), color="#ffffff", weight=ft.FontWeight.BOLD),
                         bgcolor="#8b5cf6",
                         radius=17,
                     ),
