@@ -6,7 +6,7 @@ import numpy as np
 import random
 import time
 
-on_whisper=False
+on_whisper=True
 if on_whisper:
     from FILM69.stt import Whisper
 
@@ -83,11 +83,13 @@ class App(Ui_app):
                 if self.mic.icon==Icons.MIC_OFF:
                     if self.bot_name in text:
                         self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
-                        self.chat.send_message()
-                elif self.mic.icon==Icons.MIC:...
-                    # self.new_message.value = text
-                    # self.page.update()
-                    # self.send_message_click(None)
+                        self.page.update()
+                        self.fn(None)
+                        
+                elif self.mic.icon==Icons.MIC:
+                    self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
+                    self.page.update()
+                    self.fn(None)
                 
     def fn(self,e):
         responses = [
