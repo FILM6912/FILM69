@@ -33,7 +33,7 @@ class MessageCard:
             index+=1
             self.widget_processing.append(ft.Row([
                 ft.Icon(ft.Icons.KEYBOARD_ARROW_RIGHT, color="#ffffff", size=16),
-                ft.Text(key, color="#ffffff", size=13, weight=ft.FontWeight.BOLD),
+                ft.Markdown(f"#### {key}", selectable=True),
             ], spacing=10))
             
             # Add value container
@@ -41,6 +41,7 @@ class MessageCard:
                 # content=ft.Text(self.processing[key], color="#cccccc", size=12),
                 content=ft.Markdown(
                     self.processing[key],
+                    selectable=True,
                     extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
                     code_theme=ft.MarkdownCodeTheme.MONOKAI,
                     code_style_sheet=ft.MarkdownStyleSheet.block_spacing
@@ -67,6 +68,7 @@ class MessageCard:
         # Output text components
         self.output_text_display = ft.Markdown(
             "",
+            selectable=True,
             extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
             code_theme=ft.MarkdownCodeTheme.MONOKAI,
             code_style_sheet=ft.MarkdownStyleSheet.block_spacing
@@ -109,17 +111,17 @@ class MessageCard:
             content=ft.Column([
                 # User section (right aligned)
                 ft.Row([
-                    ft.Text("User", color="#ffffff", weight=ft.FontWeight.BOLD, size=14),
+                    ft.Markdown(f"### {self.user_name}", selectable=True,),
                     ft.CircleAvatar(
                         content=ft.Text("U", color="#ffffff", weight=ft.FontWeight.BOLD),
                         bgcolor="#8b5cf6",
-                        radius=15,
+                        radius=17,
                     ),
                 ], spacing=10, alignment=ft.MainAxisAlignment.END),
                 
                 # User message (right aligned)
                 ft.Container(
-                    content=ft.Text(self.input_text, color="#ffffff", size=14),
+                    content=ft.Markdown(self.input_text, selectable=True,),
                     alignment=ft.alignment.center_right,
                     padding=ft.padding.only(right=10, top=5),
                 ),
@@ -128,9 +130,9 @@ class MessageCard:
                 
                 # AI section
                 ft.Row([
-                    ft.Icon(ft.Icons.SMART_TOY, color="#ffffff", size=20),
-                    ft.Text("AI", color="#ffffff", weight=ft.FontWeight.BOLD, size=14),
-                    ft.Text(self.model_name, color="#888888", size=12),
+                    ft.Icon(ft.Icons.SMART_TOY, color="#ffffff", size=30),
+                    # ft.Text("AI", color="#ffffff", weight=ft.FontWeight.BOLD, size=14),
+                    ft.Markdown(f"### {self.model_name}",selectable=True),
                 ], spacing=10),
                 
                 ft.Container(height=5),
