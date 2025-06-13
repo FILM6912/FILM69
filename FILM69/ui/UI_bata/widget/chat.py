@@ -15,7 +15,7 @@ class Chat(ft.Container):
         self.setup_ui()
         self.setup_properties()
         self.input_text=""
-        
+        self.chat_history=[]
     
     def load_fn(self,fn):
         self.fn = fn
@@ -114,15 +114,34 @@ class Chat(ft.Container):
         self.message_input.value = ""
         self.page.update()
         self.chat_container.scroll_to(offset=-1, duration=300)
+        self.chat_history.append({
+            "role": "user",
+            "content":[
+                {"type": "text", "text": self.input_text},
+            ]
+        })
         
-    def update_status(self,status,elapsed_time,current_dara:dict):
+        self.chat_history.append({
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": ""},
+            ]
+        })
+        
+        
+    def update_status(self,status,elapsed_time,current_data:dict):
         self.message_card.update_status(
-            status, elapsed_time, current_dara)
+            status, elapsed_time, current_data)
         self.chat_container.scroll_to(offset=-1, duration=300)
+        
         
     def update_output_text(self,text,is_generating=False):
         self.message_card.update_output_text(text, is_generating)
         self.chat_container.scroll_to(offset=-1, duration=300)
+        self.chat_history[-1]["content"][0]["text"]=text
+        
+    def get_chat(self):
+        return self.chat_history
     
 
 def main(page: ft.Page):
@@ -142,7 +161,7 @@ def main(page: ft.Page):
             "นั่นเป็นคำถามที่น่าสนใจมากครับ ให้ผมอธิบายให้ฟังนะครับ",
         ]
         
-        chat.send_message()
+        chat.send_message(user_name="FILM69",model_name="XiaoWo",)
         start_time = time.time()
         response_text = random.choice(responses)
         
@@ -182,9 +201,8 @@ def main(page: ft.Page):
         page.update()
         
     chat.load_fn(fn)
-
-        
-    page.add(chat)
+    
+    page.add(chat,ft.Button("get",on_click=lambda e: print(chat.get_chat())))
 
 if __name__ == "__main__":
     ft.app(target=main)
