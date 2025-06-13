@@ -16,6 +16,8 @@ class Chat(ft.Container):
         self.setup_properties()
         self.input_text=""
         self.chat_history=[]
+        self.user_name="User"
+        self.model_name="XiaoWo"
     
     def load_fn(self,fn):
         self.fn = fn
@@ -103,10 +105,10 @@ class Chat(ft.Container):
         
         self.page.on_keyboard_event = on_keyboard
 
-    def send_message(self,user_name="User",model_name="XiaoWo",):
+    def send_message(self):
         self.message_card = MessageCard(
-            user_name=user_name,
-            model_name=model_name,
+            user_name=self.user_name,
+            model_name=self.model_name,
             input_text=self.message_input.value
         )
         self.chat_container.controls.append(self.message_card.get_card())
@@ -152,6 +154,8 @@ def main(page: ft.Page):
     
     # Create and add chat interface
     chat = Chat(page)
+    chat.user_name="User"
+    chat.model_name="XiaoWo"
     
     def fn(e):
         responses = [
@@ -161,7 +165,7 @@ def main(page: ft.Page):
             "นั่นเป็นคำถามที่น่าสนใจมากครับ ให้ผมอธิบายให้ฟังนะครับ",
         ]
         
-        chat.send_message(user_name="FILM69",model_name="XiaoWo",)
+        chat.send_message()
         start_time = time.time()
         response_text = random.choice(responses)
         
