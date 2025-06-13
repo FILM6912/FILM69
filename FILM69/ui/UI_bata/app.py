@@ -22,6 +22,9 @@ class App(Ui_app):
         self.bot_name="คอมพิวเตอร์"
         
         print("load model success")
+        
+        self.chat.user_name="ggg"
+        self.chat.model_name=self.bot_name
 
                 
     def audio_capture(self):
@@ -78,11 +81,9 @@ class App(Ui_app):
                 print(text)
                 
                 if self.mic.icon==Icons.MIC_OFF:
-                    if self.bot_name in text:...
-                        # self.new_message.value = text.replace(self.bot_name,"").replace(" ","")
-                        # if self.new_message.value !="":
-                        #     self.page.update()
-                        #     self.send_message_click(None)
+                    if self.bot_name in text:
+                        self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
+                        self.chat.send_message()
                 elif self.mic.icon==Icons.MIC:...
                     # self.new_message.value = text
                     # self.page.update()
