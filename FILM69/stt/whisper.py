@@ -74,28 +74,36 @@ class Whisper:
         features = self.tokenizer.feature_extractor(
             audio_arrays, sampling_rate=sampling_rate
         )
+        
+        self.tokenizer.tokenizer.set_prefix_tokens(language=example["language"], task="transcribe") 
+        
         tokenized_text = self.tokenizer.tokenizer(example["text"])
         return {
             "input_features": features.input_features[0],
             "labels": tokenized_text.input_ids,
         }
         
-    def load_dataset(self,train_dataset,test_dataset=None):
+    def load_dataset(self,train_dataset,test_dataset=None,peft=True):
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
-        self.model = FastModel.get_peft_model(
-            self.base_model,
-            r = 64,
-            target_modules = ["q_proj", "v_proj"],
-            lora_alpha = 64,
-            lora_dropout = 0,
-            bias = "none",
-            use_gradient_checkpointing = "unsloth",
-            random_state = 3407,
-            use_rslora = False,
-            loftq_config = None,
-            task_type = None
-        )
+        
+        if peft:
+            self.model = FastModel.get_peft_model(
+                self.base_model,
+                r = 64,
+                target_modules = ["q_proj", "v_proj"],
+                lora_alpha = 64,
+                lora_dropout = 0,
+                bias = "none",
+                use_gradient_checkpointing = "unsloth",
+                random_state = 3407,
+                use_rslora = False,
+                loftq_config = None,
+                task_type = None
+            )
+        else:
+            self.model = self.base_model
+    
 
     def compute_metrics(self,pred):
         self.metric = evaluate.load("wer")
