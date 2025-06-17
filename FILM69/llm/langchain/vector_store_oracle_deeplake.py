@@ -183,7 +183,7 @@ class VectorStoreOracleDeeplake(VectorStore):
     def update_text_by_version(self, version, ids: list[str], text: list[str]) -> str:
         try:
             db, _ = self._load(version)
-            db.delete(version=version, ids=ids)
+            self.delete_documents_by_version(version, ids=ids)
             db.add_texts(text, ids=ids)
             self.reload()
             return "Success"
