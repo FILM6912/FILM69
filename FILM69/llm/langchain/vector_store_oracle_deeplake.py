@@ -253,13 +253,21 @@ class VectorStoreOracleDeeplake(VectorStore):
                     src=self.database_table_or_path.replace('{version}', f'{use_data_version}'),
                     dst=self.database_table_or_path.replace('{version}', f'{new_version}'),
                 )
-
+                
+            elif self.vectorstore == "Oracle" and use_data_version is None:
+                self.cursor.execute(f"""
+                    CREATE TABLE {self.database_table_or_path.replace('{version}', f'{new_version}')}
+                """)
+                self.load(new_version)
+                
             elif self.vectorstore == "Oracle" and use_data_version is not None:
                 self.cursor.execute(f"""
                     CREATE TABLE {self.database_table_or_path.replace('{version}', f'{new_version}')} AS
                     SELECT * FROM {self.database_table_or_path.replace('{version}', f'{use_data_version}')}
                 """)
                 self.load(new_version)
+                
+            
 
             return {"status": "Success", "version": new_version}
 
