@@ -255,9 +255,6 @@ class VectorStoreOracleDeeplake(VectorStore):
                 )
                 
             elif self.vectorstore == "Oracle" and use_data_version is None:
-                self.cursor.execute(f"""
-                    CREATE TABLE {self.database_table_or_path.replace('{version}', f'{new_version}')}
-                """)
                 self.load(new_version)
                 
             elif self.vectorstore == "Oracle" and use_data_version is not None:
