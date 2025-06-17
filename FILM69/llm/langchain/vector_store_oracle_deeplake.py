@@ -62,15 +62,15 @@ class VectorStoreOracleDeeplake(VectorStore):
     def _load(self, version: int):
         try:
             if self.vectorstore == "Deeplake":
-                dataset_path = os.getenv("deeplake_dataset_path").replace("{version}", f"{version}")
+                dataset_path = os.getenv("deeplake_dataset_path")
                 db = DeeplakeVectorStore(
-                    dataset_path=dataset_path,
+                    dataset_path=dataset_path.replace("{version}", f"{version}"),
                     embedding_function=self.embedding_function
                 )
                 return db, dataset_path
 
             elif self.vectorstore == "Oracle":
-                table_name = os.getenv("oracledb_table_name").replace("{version}", f"{version}")
+                table_name = os.getenv("oracledb_table_name")
                 connection = oracledb.connect(
                     user=os.getenv("oracledb_user"),
                     password=os.getenv("oracledb_password"),
@@ -79,7 +79,7 @@ class VectorStoreOracleDeeplake(VectorStore):
                 self.cursor = connection.cursor()
                 db = OracleVS(
                     client=connection,
-                    table_name=table_name,
+                    table_name=table_name.replace("{version}", f"{version}"),
                     embedding_function=self.embedding_function,
                     distance_strategy=DistanceStrategy.COSINE
                 )
@@ -290,7 +290,7 @@ class VectorStoreOracleDeeplake(VectorStore):
             self.cursor.execute(f"""
                 SELECT table_name 
                 FROM user_tables 
-                WHERE table_name LIKE '%{self.database_table_or_path.replace(str(self.version), f'')}%'
+                WHERE table_name LIKE '%{self.database_table_or_path.replace('{version}', f'')}%'
             """)
             return [int(row[0].split("_")[-1]) for row in self.cursor.fetchall()]
             
