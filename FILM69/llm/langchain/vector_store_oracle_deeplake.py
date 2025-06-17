@@ -292,5 +292,5 @@ class VectorStoreOracleDeeplake(VectorStore):
                 FROM user_tables 
                 WHERE table_name LIKE '%{self.database_table_or_path.replace(str(self.version), f'')}%'
             """)
-            return [row[0].split("_")[-1] for row in self.cursor.fetchall()]
+            return [int(row[0].split("_")[-1]) for row in self.cursor.fetchall()]
             
