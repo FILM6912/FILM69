@@ -13,6 +13,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_community.vectorstores.oraclevs import OracleVS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_deeplake.vectorstores import DeeplakeVectorStore
+import json
 
 dotenv.load_dotenv()
 
@@ -84,9 +85,9 @@ class VectorStoreOracleDeeplake(VectorStore):
                     distance_strategy=DistanceStrategy.COSINE
                 )
                 return db, table_name
-
-        except Exception:
-            return {"status": "Connection failed!"}
+            
+        except:
+            return "Unable to connect to database.",""
 
     ########################## Basic VectorStore Methods ##########################
 
@@ -248,11 +249,21 @@ class VectorStoreOracleDeeplake(VectorStore):
 
     def create_new_version(self, new_version, use_data_version=None) -> dict:
         try:
-            if self.vectorstore == "Deeplake":
+            if self.vectorstore == "Deeplake" and use_data_version is not None:
                 deeplake.copy(
                     src=self.database_table_or_path.replace('{version}', f'{use_data_version}'),
                     dst=self.database_table_or_path.replace('{version}', f'{new_version}'),
                 )
+                with open('version.json', 'r', encoding='utf-8') as f:data = json.load(f)
+                data["version"].append(new_version)
+                with open('version.json', 'w', encoding='utf-8') as f:json.dump(data, f)
+            
+            elif self.vectorstore == "Deeplake" and use_data_version is None:
+                self._load(new_version)
+                with open('version.json', 'r', encoding='utf-8') as f:data = json.load(f)
+                data["version"].append(new_version)
+                with open('version.json', 'w', encoding='utf-8') as f:json.dump(data, f)
+                
                 
             elif self.vectorstore == "Oracle" and use_data_version is None:
                 self.load(new_version)
@@ -275,7 +286,12 @@ class VectorStoreOracleDeeplake(VectorStore):
         try:
             if self.vectorstore == "Deeplake":
                 deeplake.delete(self.database_table_or_path.replace('{version}', f'{version}'))
-
+                
+                with open('version.json', 'r', encoding='utf-8') as f:data = json.load(f)
+                if version in data["version"]:data["version"].remove(version)
+                with open('version.json', 'w', encoding='utf-8') as f:json.dump(data, f)
+    
+    
             elif self.vectorstore == "Oracle":
                 self.cursor.execute(f"DROP TABLE {self.database_table_or_path.replace('{version}', f'{version}')}")
 
@@ -285,7 +301,13 @@ class VectorStoreOracleDeeplake(VectorStore):
         
     def get_versions(self) -> list:
         if self.vectorstore == "Deeplake":
-            return None
+            try:
+                with open('version.json', 'r', encoding='utf-8') as f:data = json.load(f)
+            except:
+                data={"version":[]}
+                with open('version.json', 'w', encoding='utf-8') as f:json.dump(data, f)
+            return data["version"]
+
         elif self.vectorstore == "Oracle":
             self.cursor.execute(f"""
                 SELECT table_name 
