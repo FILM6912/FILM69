@@ -69,7 +69,7 @@ class Detect:
         org_img=img
         self.results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
-        return org_img,self.results[0].plot(),results
+        return org_img,self.results[0].plot(),self.results
         
     @validate_call
     def train(self,data:str="da/data.yaml", epochs:int=50, image_size:int=640,device: Union[int, list[int], Literal["cpu"]]=0,**kwargs):
