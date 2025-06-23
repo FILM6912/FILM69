@@ -67,13 +67,23 @@ class Detect:
     def predict(self,img,**kwargs):
         img=img.copy()
         org_img=img
-        results=self.model.predict(img,verbose=self.verbose,**kwargs)
+        self.results=self.model.predict(img,verbose=self.verbose,**kwargs)
         
-        return org_img,results[0].plot(),results
+        return org_img,self.results[0].plot(),results
         
     @validate_call
     def train(self,data:str="da/data.yaml", epochs:int=50, image_size:int=640,device: Union[int, list[int], Literal["cpu"]]=0,**kwargs):
         return self.model.train(data=data, epochs=epochs, imgsz=image_size,device=device,**kwargs)
+
+    def score(self):
+        results=[]
+        for result in self.results:
+            for box in result.boxes:
+                cls_id = int(box.cls[0]) 
+                class_name = self.model.names[cls_id]
+                conf = float(box.conf[0])
+                results.append({"class_name":class_name,"score":conf,"class_id":cls_id})
+        return results
 
 
 class Segmentation:
