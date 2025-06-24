@@ -4,30 +4,30 @@
   <summary style="font-size: 25px;">Install</summary>
 
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git@v0.4.7#egg=film69[all]"
+pip install "git+https://github.com/FILM6912/film69.git@v0.4.7#egg=film69[all]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[llm]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[llm]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[rag]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[rag]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[speech]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[speech]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[ui]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[ui]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[iot]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[iot]"
 ```
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69[all_llama-cpp]"
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69[all_llama-cpp]"
 ```
 </details>
 
 ```sh
-pip install "git+https://github.com/watcharaphon6912/film69.git#egg=film69" --force-reinstall
+pip install "git+https://github.com/FILM6912/film69.git#egg=film69" --force-reinstall
 ```
 
 
