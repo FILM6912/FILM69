@@ -43,7 +43,7 @@ class Whisper:
         self,
         model_name_or_path,
         language = "Thai",
-        config_language="<|th|>",
+        config_language=None,
         task = "transcribe" or "translate",
         dtype=None,
         load_in_4bit=False,
@@ -62,7 +62,7 @@ class Whisper:
             whisper_task = task,
             **kwargs
         )
-        self.base_model.generation_config.language = config_language
+        self.base_model.generation_config.language =f"<|{config_language}|>" if config_language!=None else None 
         self.base_model.generation_config.task = task
         self.base_model.config.suppress_tokens = []
         self.base_model.generation_config.forced_decoder_ids = None
