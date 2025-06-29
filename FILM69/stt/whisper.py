@@ -7,10 +7,9 @@ from typing import Any, Dict, List, Union,Literal
 from datasets import load_dataset, Audio
 from transformers import pipeline
 import evaluate
-import torch
+import torch,torchaudio
 import warnings
 warnings.simplefilter("ignore", FutureWarning)
-
 
 
 @dataclass
@@ -194,6 +193,14 @@ class Whisper:
     def predict(self,audio,**kwargs):
         try:model=self.model
         except:model=self.base_model
+
+        if type(audio)==str:
+            waveform, original_sample_rate = torchaudio.load(audio)
+            target_sample_rate = 16000
+            if original_sample_rate != target_sample_rate:
+                resampler = torchaudio.transforms.Resample(orig_freq=original_sample_rate, new_freq=target_sample_rate)
+                waveform = resampler(waveform)
+            audio = waveform.numpy()
         
         FastModel.for_inference(model)
         model.eval()
