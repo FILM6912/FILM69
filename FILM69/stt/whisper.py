@@ -62,6 +62,7 @@ class Whisper:
             whisper_task = task,
             **kwargs
         )
+
         self.base_model.generation_config.language =f"<|{config_language}|>" if config_language!=None else None 
         self.base_model.generation_config.task = task
         self.base_model.config.suppress_tokens = []
@@ -101,6 +102,7 @@ class Whisper:
                 loftq_config = None,
                 task_type = None
             )
+            
         else:
             self.model = self.base_model
     
@@ -189,24 +191,19 @@ class Whisper:
             self.load_dataset(None)
             self.model.save_pretrained_merged(output_dir, self.tokenizer, save_method = save_method)
     
-    def predict(self,audio, torch_dtype=torch.float16,return_language=True,**kwargs):
+    def predict(self,audio,**kwargs):
         try:model=self.model
         except:model=self.base_model
         
         FastModel.for_inference(model)
         model.eval()
 
-        self.whisper = pipeline(
-                "automatic-speech-recognition",
-                model=model,
-                tokenizer=self.tokenizer.tokenizer,
-                feature_extractor=self.tokenizer.feature_extractor,
-                torch_dtype=torch_dtype,
-                return_language=return_language,
-                
-        )
+        inputs = self.tokenizer(audio, return_tensors="pt",sampling_rate=16_000)
+        input_features = inputs.input_features.to(device=model.device,dtype=model.dtype)
+        generated_ids = model.generate(inputs=input_features)
+        transcription = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
-        return self.whisper(audio,**kwargs)
+        return transcription
        
 
 if __name__ =="__main__":
