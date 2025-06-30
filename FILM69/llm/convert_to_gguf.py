@@ -29,6 +29,7 @@ def convert_to_gguf(
         build_gpu=False,
         save_original_gguf=False,
         install_req=False):
+        "!llama.cpp/build/bin/llama-imatrix -m Qwen2.5-VL-3B-Instruct/GGUF/Qwen2.5-VL-3B-Instruct.F16.gguf -f calibration_data.txt -o model-imatrix.dat  -ngl 0"
     
 
     p="./"
