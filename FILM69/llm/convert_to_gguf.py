@@ -25,6 +25,7 @@ def convert_to_gguf(
         path_output:str=None,
         quantization_method:list[str]= ["q4_0","q8_0"],
         max_size_gguf="49GB",
+        mmproj:bool=False,
         build_gpu=False,
         save_original_gguf=False,
         install_req=False):
@@ -36,7 +37,11 @@ def convert_to_gguf(
     if platform.system()=="Linux":re=os.popen("ls").read().split("\n")
     else:re=os.popen("dir /b").read().split("\n")
 
-    folder_path = f"{path_model}/GGUF"
+    if path_output:
+        folder_path = f"{path_output}/GGUF"
+    else:
+        folder_path = f"{path_model}/GGUF"
+
     os.makedirs(folder_path, exist_ok=True)
 
     if not "llama.cpp" in re:
@@ -55,14 +60,18 @@ def convert_to_gguf(
             
             print("Done!")    
     
-    command = f"python {p}llama.cpp/convert_hf_to_gguf.py {path_model} --outfile {path_output if path_output !=None else folder_path+'/'+path_model}.F16.gguf"
+    if mmproj:
+        command = f"python {p}llama.cpp/convert_hf_to_gguf.py {path_model} --outfile {folder_path+'/'+path_model}.F16.gguf --mmproj"
+        os.system(command)
+        
+    command = f"python {p}llama.cpp/convert_hf_to_gguf.py {path_model} --outfile {folder_path+'/'+path_model}.F16.gguf"
     os.system(command)
     
     for i in quantization_method:
         if i.upper() != "F16":
             command = f'{p}llama.cpp/build/bin/llama-quantize\
-                {path_output if path_output !=None else folder_path+"/"+path_model}.F16.gguf\
-                {path_output if path_output !=None else folder_path+"/"+path_model}.{i.upper()}.gguf {i.upper()}'
+                {folder_path+"/"+path_model}.F16.gguf\
+                {folder_path+"/"+path_model}.{i.upper()}.gguf {i.upper()}'
                 
             os.system(command)
             
