@@ -228,23 +228,23 @@ if __name__ =="__main__":
     x.load_dataset(train_dataset,test_dataset)
     
     x.triner(
-        max_steps = 10,
-        per_device_train_batch_size = 2,
-        gradient_accumulation_steps = 4,
-        warmup_steps = 5,
-        learning_rate = 1e-4,
-        logging_steps = 1,
-        optim = "adamw_8bit",
-        weight_decay = 0.01,
+        max_steps=10000,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=16,  
+        warmup_steps=200,              
+        learning_rate=3e-4,        
+        optim="adamw_8bit",
+        weight_decay=0.05,
+        gradient_checkpointing=True,
         remove_unused_columns=False,
-        lr_scheduler_type = "linear",
-        label_names = ['labels'],
-        eval_steps = 5,
-        eval_strategy="steps",
-        seed = 3407,
-        output_dir = "outputs",
-        report_to = "none", 
-        callbacks=None
+        lr_scheduler_type="linear",
+        label_names=['labels'],
+        eval_strategy="no",           
+        eval_steps=None,              
+        logging_steps=20,
+        seed=3407,
+        load_best_model_at_end=False,   
+        report_to="tensorboard",      
         )
     
     x.start_train()
