@@ -1,4 +1,4 @@
-from .assistant.widget.chat import Chat
+from .assistant.widget import Chat
 from .assistant.timer import Timer
 
 __all__ = [
