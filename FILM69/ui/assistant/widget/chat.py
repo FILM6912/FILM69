@@ -3,7 +3,7 @@ import time
 import random
 from typing import Union,Literal
 try:
-    from message_card import MessageCard
+    from .message_card import MessageCard
 except:
     from widget.message_card import MessageCard
 
