@@ -19,11 +19,11 @@ class App(Ui_app):
             self.whisper.load_model("FILM6912/whisper-small-thai")
         
         self.mic_off=False
-        self.bot_name="คอมพิวเตอร์"
+        self.bot_name="เสียวอู่"
         
         print("load model success")
         
-        self.chat.user_name="ggg"
+        self.chat.user_name="User"
         self.chat.model_name=self.bot_name
 
                 
