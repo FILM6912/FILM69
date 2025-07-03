@@ -1,6 +1,6 @@
 from flet import *
 from .ui import Ui_app
-from llm import llm
+from .llm import llm
 import pyaudio
 import numpy as np
 import random
