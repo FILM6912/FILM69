@@ -1,44 +1,31 @@
 from flet import *
-from .ui import Ui_app
-from .llm import llm
-from FILM69.stt import Whisper
+from ui import Ui_app
+from llm import llm
 import pyaudio
 import numpy as np
 import random
+import time
+
+on_whisper=False
+if on_whisper:
+    from FILM69.stt import Whisper
 
 class App(Ui_app):
     def __init__(self,page:Page):
         super().__init__(page)
-        self.whisper=Whisper()
-        self.whisper.load_model("FILM6912/whisper-small-thai")
+        
+        if on_whisper:
+            self.whisper=Whisper()
+            self.whisper.load_model("FILM6912/whisper-small-thai")
         
         self.mic_off=False
         self.bot_name="คอมพิวเตอร์"
         
         print("load model success")
-    
-    def send_message_click(self,e):
-        text = self.new_message.value.strip()
-        if text:
-            self.chat.add_message("User", text, "user")
-            # จำลองคำตอบจาก AI
-            self.new_message.value = ""
-            self.page.update()
-            t=""
-            mess=self.chat.get_message()
-            his=[]
-            for i in mess:
-                if i["role"]=="user":
-                    his.append(("user",i["content"]))
-                else:
-                    his.append(("ai",i["content"]))
-            
-            his.append(("user",text))
-            self.chat.add_message("AI", "...", "ai")
-            
-            for i in llm.stream(his):
-                t+=i.content
-                self.chat.add_stream_message(t)
+        
+        self.chat.user_name="ggg"
+        self.chat.model_name=self.bot_name
+
                 
     def audio_capture(self):
         p = pyaudio.PyAudio()
@@ -89,19 +76,66 @@ class App(Ui_app):
         self.SILENCE_DURATION = 2
         for frame in self.audio_capture():
             audio_data = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32768.0
-            text=self.whisper.predict(audio_data)["text"]
-            print(text)
-            
-            if self.mic.icon==Icons.MIC_OFF:
-                if self.bot_name in text:
-                    self.new_message.value = text.replace(self.bot_name,"").replace(" ","")
-                    if self.new_message.value !="":
+            if on_whisper:
+                text=self.whisper.predict(audio_data)["text"]
+                print(text)
+                
+                if self.mic.icon==Icons.MIC_OFF:
+                    if self.bot_name in text:
+                        self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
                         self.page.update()
-                        self.send_message_click(None)
-            elif self.mic.icon==Icons.MIC:
-                self.new_message.value = text
-                self.page.update()
-                self.send_message_click(None)
+                        self.fn(None)
+                        
+                elif self.mic.icon==Icons.MIC:
+                    self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
+                    self.page.update()
+                    self.fn(None)
+                
+    def fn(self,e):
+        responses = [
+            "สวัสดีครับ มีอะไรให้ช่วยบ้างไหมครับ",
+            "ผมชื่อ AI Assistant ยินดีที่ได้รู้จักครับ",
+            "ขอบคุณสำหรับคำถามครับ ผมจะช่วยเหลือคุณให้ดีที่สุด",
+            "นั่นเป็นคำถามที่น่าสนใจมากครับ ให้ผมอธิบายให้ฟังนะครับ",
+        ]
+        
+        self.chat.send_message()
+        
+        
+        start_time = time.time()
+        response_text = random.choice(responses)
+    
+        # processing_time = random.uniform(1.0, 2.0)
+        # while time.time() - start_time < processing_time:
+        #     elapsed = time.time() - start_time
+        #     self.chat.update_status("Processing", elapsed, {
+        #         "Input": self.chat.message_input.value,
+        #     })
+        #     self.page.update()
+        #     time.sleep(0.1)
+        
+        current_text = ""
+        print(self.chat.input_text)
+        for char in llm.stream(self.chat.input_text):
+            current_text += char.content
+            elapsed = time.time() - start_time
+            self.chat.update_status("Generating", elapsed, {
+                "Input": self.chat.input_text,
+                "Output": current_text
+            })
+            self.chat.update_output_text(current_text, True)
+            self.page.update()
+            
+            # time.sleep(0.01)
+        
+        # Finished
+        final_time = time.time() - start_time
+        self.chat.update_status("Finished", final_time, {
+            "Input": self.chat.input_text,
+            "Output": current_text
+        })
+        self.chat.update_output_text(current_text, False)
+        self.page.update()
 
 def run(page:Page):
     App(page)
