@@ -74,8 +74,8 @@ class Whisper:
         features = self.tokenizer.feature_extractor(
             audio_arrays, sampling_rate=sampling_rate
         )
-        
-        self.tokenizer.tokenizer.set_prefix_tokens(language=example["language"], task="transcribe") 
+        if "language" in list(example.keys()):
+            self.tokenizer.tokenizer.set_prefix_tokens(language=example["language"], task="transcribe") 
         
         tokenized_text = self.tokenizer.tokenizer(example["text"])
         return {
