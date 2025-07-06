@@ -1,6 +1,9 @@
 from flet import *
 from FILM69.ui import Timer
-from .widget import Chat
+try:
+    from .widget import Chat
+except:
+    from widget import Chat
 import time
 import random
 import keyboard as kb

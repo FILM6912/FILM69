@@ -1,10 +1,15 @@
 from flet import *
-from .ui import Ui_app
-from .llm import llm
+try:
+    from .ui import Ui_app
+    from .langflow_api import LangflowAPI
+except:
+    from ui import Ui_app
+    from langflow_api import LangflowAPI
 import pyaudio
 import numpy as np
 import random
-import time
+import time,json
+import threading
 
 on_whisper=False
 if on_whisper:
@@ -25,6 +30,52 @@ class App(Ui_app):
         
         self.chat.user_name="User"
         self.chat.model_name=self.bot_name
+
+        url:str="http://localhost:7860"
+        flow_id:str="31cd1f8e-a2f3-47f9-8742-773fd1324d79"
+        session_id:str="123"
+        api_key:str=""
+
+        self.agent=LangflowAPI(
+            url=url,
+            flow_id=flow_id,
+            session_id=session_id,
+            api_key=api_key
+        )
+        self.get_history_chat()
+
+    
+    def get_history_chat(self):
+        
+        for char_js in self.agent.get_messages():
+            self.chat.message_input.value=char_js["input"]
+            self.chat.send_message()
+            current_text = char_js["output"]
+            tool = char_js.get("tool", {})
+            tool_name = tool.get("name")
+            js = {"Input": char_js["input"]}
+            if tool_name:
+                js[f"Executed {tool_name}"] = f'''
+Input:
+```json
+{json.dumps(tool.get("input", {}), indent=2,ensure_ascii=False)}
+```
+
+Output:
+
+```json
+{json.dumps(tool.get("output", {}), indent=2,ensure_ascii=False)}
+```'''
+                js["Output"] = current_text
+            elif current_text:
+                js["Output"] = current_text
+
+
+            self.chat.update_status("Finished", 0, js)
+            self.chat.update_output_text(current_text, False)
+            self.page.update()
+
+
 
                 
     def audio_capture(self):
@@ -48,6 +99,7 @@ class App(Ui_app):
                         for i in self.voice_status.controls:
                             # i.height=random.randint(0,int(np.abs(np_data).mean()))/2
                             i.height=random.randint(0,int(np.abs(np_data).mean()))
+                            i.bgcolor="#00ff00"
                             i.update()
                         detect = True
                         silence_counter = 0
@@ -92,48 +144,60 @@ class App(Ui_app):
                     self.fn(None)
                 
     def fn(self,e):
-        responses = [
-            "สวัสดีครับ มีอะไรให้ช่วยบ้างไหมครับ",
-            "ผมชื่อ AI Assistant ยินดีที่ได้รู้จักครับ",
-            "ขอบคุณสำหรับคำถามครับ ผมจะช่วยเหลือคุณให้ดีที่สุด",
-            "นั่นเป็นคำถามที่น่าสนใจมากครับ ให้ผมอธิบายให้ฟังนะครับ",
-        ]
-        
         self.chat.send_message()
         
-        
         start_time = time.time()
-        response_text = random.choice(responses)
+        stop=False
     
-        # processing_time = random.uniform(1.0, 2.0)
-        # while time.time() - start_time < processing_time:
-        #     elapsed = time.time() - start_time
-        #     self.chat.update_status("Processing", elapsed, {
-        #         "Input": self.chat.message_input.value,
-        #     })
-        #     self.page.update()
-        #     time.sleep(0.1)
-        
         current_text = ""
-        print(self.chat.input_text)
-        for char in llm.stream(self.chat.input_text):
-            current_text += char.content
+
+        for char_js in self.agent.chat(self.chat.input_text):
             elapsed = time.time() - start_time
-            self.chat.update_status("Generating", elapsed, {
-                "Input": self.chat.input_text,
-                "Output": current_text
-            })
+            current_text = char_js["output"]
+            tool = char_js.get("tool", {})
+            tool_name = tool.get("name")
+
+            js = {"Input": self.chat.input_text}
+            if not tool_name and not current_text:
+                self.chat.update_status("Processing", elapsed, js)
+
+            elif tool_name:
+                js[f"Executed {tool_name}"] = f'''
+Input:
+```json
+{json.dumps(tool.get("input", {}), indent=2,ensure_ascii=False)}
+```
+
+Output:
+
+```json
+{json.dumps(tool.get("output", {}), indent=2,ensure_ascii=False)}
+```'''
+                js["Output"] = current_text
+            elif current_text:
+                js["Output"] = current_text
+
+            if current_text:
+                self.chat.update_status("Generating", elapsed, js)
+
+            elif not current_text and tool_name:
+                self.chat.update_status(f"Executed {tool_name}", elapsed, js)
+
             self.chat.update_output_text(current_text, True)
             self.page.update()
+
+            def time_update():
+                while not stop:
+                    elapsed = time.time() - start_time
+                    self.chat.message_card.time_text.value = f"{elapsed :.1f}s"
+                    self.page.update()
             
-            # time.sleep(0.01)
-        
+            threading.Thread(target=time_update).start()
+            
         # Finished
+        stop=True
         final_time = time.time() - start_time
-        self.chat.update_status("Finished", final_time, {
-            "Input": self.chat.input_text,
-            "Output": current_text
-        })
+        self.chat.update_status("Finished", final_time, js)
         self.chat.update_output_text(current_text, False)
         self.page.update()
 
@@ -146,3 +210,4 @@ def main():
 if __name__=="__main__":
     # app(main,port=7860,view=AppView.FLET_APP_WEB)
     app(run)
+

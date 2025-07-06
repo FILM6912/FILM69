@@ -151,6 +151,7 @@ class MessageCard:
             padding=ft.padding.all(20),
             margin=ft.margin.symmetric(horizontal=10, vertical=5),
         )
+
     
     def update_status(self, status, elapsed_time, data):
         """Update status and time"""
@@ -166,7 +167,7 @@ class MessageCard:
         # Update status icon and text
         if status == "Processing":
             if self.status != self.last_status:
-                self.status_icon.content = ft.ProgressRing(width=16, height=16, stroke_width=2, color="#177bec")
+                self.status_icon.content = ft.ProgressRing(width=16, height=16, stroke_width=2, color="#FFC107")
                 self.last_status = self.status
                 
             self.status_text.value = "Processing..."
@@ -174,16 +175,19 @@ class MessageCard:
             
         elif status == "Generating":
             if self.status != self.last_status:
-                self.status_icon.content = ft.ProgressRing(width=16, height=16, stroke_width=2, color="#1fbd00")
+                self.status_icon.content = ft.ProgressRing(width=16, height=16, stroke_width=2, color="#00BCD4")
                 self.last_status = self.status
 
             self.status_text.value = "Generating..."
             # status_color = "#1fbd00"
             
-        else:  # Finished
-            self.status_icon.content = ft.Icon(ft.Icons.CHECK_CIRCLE, color="#22c55e", size=22)
+        elif status == "Finished":  # Finished
+            self.status_icon.content = ft.Icon(ft.Icons.CHECK_CIRCLE, color="#4CAF50", size=22)
             self.status_text.value = "Finished"
             # status_color = "#22c55e"
+        else:
+            self.status_icon.content = ft.ProgressRing(width=16, height=16, stroke_width=2, color="#673AB7")
+            self.status_text.value = status
 
         # Update time
         self.time_text.value = f"{elapsed_time:.1f}s"
