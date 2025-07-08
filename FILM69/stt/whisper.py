@@ -1,7 +1,5 @@
-from unsloth import FastModel
-from transformers import WhisperForConditionalGeneration
+from transformers import WhisperForConditionalGeneration,AutoProcessor
 from transformers import Seq2SeqTrainingArguments, Seq2SeqTrainer
-from unsloth import is_bfloat16_supported
 from dataclasses import dataclass
 from typing import Any, Dict, List, Union,Literal
 from datasets import load_dataset, Audio
@@ -9,6 +7,11 @@ from transformers import pipeline
 import evaluate
 import torch,torchaudio
 import warnings
+
+if torch.cuda.is_available():
+    from unsloth import is_bfloat16_supported
+    from unsloth import FastModel
+
 warnings.simplefilter("ignore", FutureWarning)
 
 
@@ -52,15 +55,19 @@ class Whisper:
         
         if device_map=="auto":self.device = "cuda" if torch.cuda.is_available() else "cpu"
         else:self.device = device_map
-        self.base_model, self.tokenizer = FastModel.from_pretrained(
-            model_name = model_name_or_path,
-            dtype = dtype,
-            load_in_4bit = load_in_4bit,
-            auto_model = WhisperForConditionalGeneration,
-            whisper_language = language,
-            whisper_task = task,
-            **kwargs
-        )
+        if self.device=="cuda":
+            self.base_model, self.tokenizer = FastModel.from_pretrained(
+                model_name = model_name_or_path,
+                dtype = dtype,
+                load_in_4bit = load_in_4bit,
+                auto_model = WhisperForConditionalGeneration,
+                whisper_language = language,
+                whisper_task = task,
+                **kwargs
+            )
+        else:
+            self.base_model=WhisperForConditionalGeneration.from_pretrained(model_name_or_path,torch_dtype=dtype)
+            self.tokenizer=AutoProcessor.from_pretrained(model_name_or_path)
 
         self.base_model.generation_config.language =f"<|{config_language}|>" if config_language!=None else None 
         self.base_model.generation_config.task = task
@@ -74,8 +81,8 @@ class Whisper:
         features = self.tokenizer.feature_extractor(
             audio_arrays, sampling_rate=sampling_rate
         )
-        if "language" in list(example.keys()):
-            self.tokenizer.tokenizer.set_prefix_tokens(language=example["language"], task="transcribe") 
+        
+        self.tokenizer.tokenizer.set_prefix_tokens(language=example["language"], task="transcribe") 
         
         tokenized_text = self.tokenizer.tokenizer(example["text"])
         return {
@@ -201,8 +208,9 @@ class Whisper:
                 resampler = torchaudio.transforms.Resample(orig_freq=original_sample_rate, new_freq=target_sample_rate)
                 waveform = resampler(waveform)
             audio = waveform.numpy()
-        
-        FastModel.for_inference(model)
+            
+        if self.device=="cuda":
+            FastModel.for_inference(model)
         model.eval()
 
         inputs = self.tokenizer(audio, return_tensors="pt",sampling_rate=16_000)
