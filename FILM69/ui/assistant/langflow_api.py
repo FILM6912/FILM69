@@ -22,7 +22,7 @@ class LangflowAPI:
             'Content-Type': 'application/json'
             }
 
-    def chat(self,text_input):
+    def chat(self,text_input,stream=True):
         payload = {
             "input_value": text_input,
             "output_type": "chat",
@@ -32,9 +32,9 @@ class LangflowAPI:
         text_response = [""]
         tools_response =[{"name": None,"input": None,"output": None}]
         
-        url=f"{self.url}/api/v1/run/{self.flow_id}?stream=true"
-
-        with requests.post(url, headers=self.headers, json=payload, stream=True) as response:
+        url=f"{self.url}/api/v1/run/{self.flow_id}?stream={str(stream).lower()}"
+        
+        with requests.post(url, headers=self.headers, json=payload, stream=stream) as response:
             if response.status_code == 200:
                 for line in response.iter_lines(decode_unicode=True):
                     if line:
@@ -56,12 +56,13 @@ class LangflowAPI:
                         
                         elif event_type == "end":
                             break
-
+                            
                         outputs={
                             "input":payload["input_value"],
                             "tool":tools_response[-1],
                             "output":text_response[-1]
                             }
+                        
                         yield outputs
             else:
                 yield {
@@ -95,12 +96,17 @@ class LangflowAPI:
                                     "input": content.get("tool_input"),
                                     "output": content.get("output")
                                 }
-
-                    output.append({
-                        "input": user["text"],
-                        "tool": tool_info,
-                        "output": ai["text"]
-                    })
+                    if tool_info["name"]==None:
+                        output.append({
+                            "input": user["text"],
+                            "output": ai["text"]
+                        })
+                    else:
+                        output.append({
+                            "input": user["text"],
+                            "tool": tool_info,
+                            "output": ai["text"]
+                        })
 
             return output
         else:
@@ -109,4 +115,16 @@ class LangflowAPI:
                     "code": response.status_code,
                     "response":response.text
                 }
+
+    def delete(self,session_id):
+
+        url = f"{self.url}/api/v1/monitor/messages/session/{session_id}"
+
+        response = requests.request("DELETE", url, headers=self.headers)
+
+        return {
+            "status":"❌ HTTP Error",
+            "code": response.status_code,
+            "response":response.text
+        }
 
