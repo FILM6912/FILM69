@@ -45,7 +45,7 @@ class App(Ui_app):
         self.save_config_btn=Button("Save",expand=True,on_click=lambda e: self.save_config())
         
         self.load_config()
-        if self.url.value!="" or self.flow_id!="" or self.api_key!="":
+        if self.url.value!="" and self.flow_id!="" and self.api_key!="":
             self.get_history_chat()
         
         
