@@ -7,7 +7,7 @@ class LangflowAPI:
 
     def __init__(
             self,
-            url="http://localhost:7860",
+            url="https://film6912-langflow.hf.space",
             flow_id="31cd1f8e-a2f3-47f9-8742-773fd1324d79",
             session_id="123",
             api_key=None
@@ -30,24 +30,28 @@ class LangflowAPI:
             "session_id": self.session_id
             }
         text_response = [""]
-        tools_response =[{"name": None,"input": None,"output": None}]
         
         url=f"{self.url}/api/v1/run/{self.flow_id}?stream={str(stream).lower()}"
         
         with requests.post(url, headers=self.headers, json=payload, stream=stream) as response:
             if response.status_code == 200:
+                tools_response=[]
                 for line in response.iter_lines(decode_unicode=True):
                     if line:
                         event_data = json.loads(line)
                         event_type = event_data.get("event")
                         data = event_data.get("data", {})
                         try:
-                            tool_block = data.get("content_blocks", [{}])[0].get("contents", [{}])[1]
-                            tools_response.append({
-                                "name": tool_block.get("name"),
-                                "input": tool_block.get("tool_input"),
-                                "output": tool_block.get("output")
-                            })
+                            tool_block = data.get("content_blocks", [{}])[0].get("contents", [{}])
+
+                            tools_response=[]
+                            for i in tool_block:
+                                if i.get("type")=="tool_use":
+                                    tools_response.append({
+                                        "name": i.get("name"),
+                                        "input": i.get("tool_input"),
+                                        "output": i.get("output")
+                                    })
                         except:...
                         if event_type == "add_message" and data.get("sender") in ["Machine", "AI"]:
                             text = data.get("text", "")
@@ -59,7 +63,7 @@ class LangflowAPI:
                             
                         outputs={
                             "input":payload["input_value"],
-                            "tool":tools_response[-1],
+                            "tool":tools_response,
                             "output":text_response[-1]
                             }
                         
@@ -70,10 +74,12 @@ class LangflowAPI:
                     "code": response.status_code,
                     "response":response.text
                 }
- 
-    
-    def get_messages(self):
-        url=f"{self.url}/api/v1/monitor/messages?session_id={self.session_id}"
+
+    def get_messages(self,all=False):
+        if all:
+            url=f"{self.url}/api/v1/monitor/messages"
+        else:
+            url=f"{self.url}/api/v1/monitor/messages?session_id={self.session_id}"
         response = requests.request("GET", url, headers=self.headers)
 
         if response.status_code==200:
@@ -84,28 +90,30 @@ class LangflowAPI:
             for i in range(0, len(data) - 1, 2):
                 user = data[i]
                 ai = data[i + 1]
-
+                
                 if user["sender"] == "User" and ai["sender"] == "Machine":
-                    tool_info = {"name": None, "input": None, "output": None}
+                    tool_info = []
 
                     for block in ai.get("content_blocks", []):
                         for content in block.get("contents", []):
                             if content["type"] == "tool_use":
-                                tool_info = {
+                                tool_info.append({
                                     "name": content.get("name"),
                                     "input": content.get("tool_input"),
                                     "output": content.get("output")
-                                }
-                    if tool_info["name"]==None:
+                                })
+                    if len(tool_info)==0:
                         output.append({
                             "input": user["text"],
-                            "output": ai["text"]
+                            "output": ai["text"],
+                            "session_id":data[i]["session_id"]
                         })
                     else:
                         output.append({
                             "input": user["text"],
                             "tool": tool_info,
-                            "output": ai["text"]
+                            "output": ai["text"],
+                            "session_id":data[i]["session_id"]
                         })
 
             return output
@@ -127,4 +135,3 @@ class LangflowAPI:
             "code": response.status_code,
             "response":response.text
         }
-
