@@ -10,6 +10,10 @@ import numpy as np
 import random
 import time,json
 import threading
+import os
+import site
+from pathlib import Path
+import uuid
 
 on_whisper=False
 if on_whisper:
@@ -27,48 +31,147 @@ class App(Ui_app):
         self.bot_name="เสียวอู่"
         
         print("load model success")
-        
+
         self.chat.user_name="User"
-        self.chat.model_name=self.bot_name
+        self.chat.model_name=self.bot_name  
 
-        url:str="http://localhost:7860"
-        flow_id:str="31cd1f8e-a2f3-47f9-8742-773fd1324d79"
-        session_id:str="123"
-        api_key:str=""
+        self.config=None
+        self.session_id=str(uuid.uuid4())
+        # self.session_id="123"
 
-        self.agent=LangflowAPI(
-            url=url,
-            flow_id=flow_id,
-            session_id=session_id,
-            api_key=api_key
-        )
-        self.get_history_chat()
-
-    
-    def get_history_chat(self):
+        self.url=TextField(label="URL")
+        self.flow_id=TextField(label="Flow ID")
+        self.api_key=TextField(label="API KEY",password=True, can_reveal_password=True)
+        self.save_config_btn=Button("Save",expand=True,on_click=lambda e: self.save_config())
         
+        self.load_config()
+        self.get_history_chat()
+        
+        
+        new_tab=[
+            Tab(
+                tab_content=Icon(Icons.HISTORY),
+                
+            ),
+            Tab(
+                tab_content=Icon(Icons.SETTINGS),
+                content=Container(
+                    content=Column([
+                        Text(),
+                        self.url,
+                        self.flow_id,
+                        self.api_key,
+                        Row([self.save_config_btn])
+                    ]), alignment=alignment.center
+                ),
+            ),
+            ]
+        
+        for i in new_tab:self.tabs.tabs.append(i)
+        self.update_history_tab()
+       
+    
+    def update_history_tab(self):
+        self.tabs.tabs[1].content=self.chat_session()
+        self.page.update()
+
+    def chat_session(self):
+        data=self.agent.get_messages(all=True)
+        seen = set()
+        unique = [d for d in data if d['session_id'] not in seen and not seen.add(d['session_id'])]
+
+        x=ListView([
+                CupertinoButton(i["input"],on_click=lambda e:self.select_chat(i["session_id"]))
+        for i in unique])
+        
+        return x
+
+    def load_config(self):
+        path_f=self.path_config()
+        path=f"{path_f}/config.json"
+        if "config.json" not in os.listdir(path_f):
+            data={"url":"","flow_id":"","api_key":""}
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+        with open(path, "r", encoding="utf-8") as f:
+            self.config = json.load(f)
+            self.url.value=self.config["url"]
+            self.flow_id.value=self.config["flow_id"]
+            self.api_key.value=self.config["api_key"]
+
+    def save_config(self):
+        path=self.path_config()
+        path=f"{path}/config.json"
+        data={"url":self.url.value,"flow_id":self.flow_id.value,"api_key":self.api_key.value}
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+        self.dialog()
+        
+    
+    def dialog(self,title="บันทึกสำเร็จ",content="",yes_btn="ตกลง",icon=Icons.VERIFIED):
+        dlg_modal = AlertDialog(
+            modal=True,
+            # icon=icon,
+            title=Text(title),
+            content=Text(content),
+            actions=[
+                TextButton(yes_btn, on_click=lambda e: self.page.close(dlg_modal)),
+            ],
+            actions_alignment=MainAxisAlignment.END,
+        )
+        self.page.open(dlg_modal)
+
+    def path_config(self):
+        site_packages = next(p for p in site.getsitepackages() if Path(p).exists())
+        assistant_path = Path(site_packages)/ "Lib" / "site-packages" / "FILM69" / "ui" / "assistant"
+        if assistant_path.exists():
+            # print(f"✅ พบโฟลเดอร์อยู่แล้ว: {assistant_path}")
+            ...
+        else:
+            assistant_path.mkdir(parents=True, exist_ok=True)
+            # print(f"🆕 สร้างโฟลเดอร์ใหม่เรียบร้อย: {assistant_path}")
+        
+        return assistant_path
+
+    def select_chat(self,session_id):
+        self.tabs.selected_index=0
+        self.session_id=session_id
+        self.get_history_chat()
+        self.page.update()
+
+    def get_history_chat(self):
+        self.agent=LangflowAPI(
+            url=self.url.value,
+            flow_id=self.flow_id.value,
+            session_id=self.session_id,
+            api_key=self.api_key.value
+        )
+
         for char_js in self.agent.get_messages():
             self.chat.message_input.value=char_js["input"]
             self.chat.send_message()
             current_text = char_js["output"]
-            tool = char_js.get("tool", {})
-            tool_name = tool.get("name")
+            tool = char_js.get("tool")
             js = {"Input": char_js["input"]}
-            if tool_name:
-                js[f"Executed {tool_name}"] = f'''
+            if tool!=None:
+                index=0
+                for i in tool:
+                    tool_name = i.get("name")
+                    js[f"Executed {tool_name}{' '*index}"] = f'''
 Input:
 ```json
-{json.dumps(tool.get("input", {}), indent=2,ensure_ascii=False)}
+{json.dumps(i.get("input", {}), indent=2,ensure_ascii=False)}
 ```
 
 Output:
 
 ```json
-{json.dumps(tool.get("output", {}), indent=2,ensure_ascii=False)}
+{json.dumps(i.get("output", {}), indent=2,ensure_ascii=False)}
 ```'''
-                js["Output"] = current_text
-            elif current_text:
-                js["Output"] = current_text
+                    index+=1
+            js["Output"] = current_text
 
 
             self.chat.update_status("Finished", 0, js)
@@ -76,8 +179,6 @@ Output:
             self.page.update()
 
 
-
-                
     def audio_capture(self):
         p = pyaudio.PyAudio()
         stream = p.open(format=self.FORMAT,channels=self.CHANNELS,rate=self.RATE,input=True,frames_per_buffer=self.CHUNK)
@@ -145,54 +246,55 @@ Output:
                 
     def fn(self,e):
         self.chat.send_message()
-        
-        start_time = time.time()
         stop=False
-    
+        start_time = time.time()
         current_text = ""
-
-        for char_js in self.agent.chat(self.chat.input_text):
-            elapsed = time.time() - start_time
-            current_text = char_js["output"]
-            tool = char_js.get("tool", {})
-            tool_name = tool.get("name")
-
-            js = {"Input": self.chat.input_text}
-            if not tool_name and not current_text:
-                self.chat.update_status("Processing", elapsed, js)
-
-            elif tool_name:
-                js[f"Executed {tool_name}"] = f'''
-Input:
-```json
-{json.dumps(tool.get("input", {}), indent=2,ensure_ascii=False)}
-```
-
-Output:
-
-```json
-{json.dumps(tool.get("output", {}), indent=2,ensure_ascii=False)}
-```'''
-                js["Output"] = current_text
-            elif current_text:
-                js["Output"] = current_text
-
-            if current_text:
-                self.chat.update_status("Generating", elapsed, js)
-
-            elif not current_text and tool_name:
-                self.chat.update_status(f"Executed {tool_name}", elapsed, js)
-
-            self.chat.update_output_text(current_text, True)
-            self.page.update()
-
-            def time_update():
+        
+        def time_update():
                 while not stop:
                     elapsed = time.time() - start_time
                     self.chat.message_card.time_text.value = f"{elapsed :.1f}s"
                     self.page.update()
             
-            threading.Thread(target=time_update).start()
+        threading.Thread(target=time_update).start()
+        
+
+        js = {"Input": self.chat.input_text}
+        elapsed = time.time() - start_time
+        self.chat.update_status("Processing", elapsed, js)
+        for char_js in self.agent.chat(self.chat.input_text):
+            current_text = char_js["output"]
+            tool = char_js.get("tool")
+
+            index=0
+            for i in tool:
+                tool_name = i.get("name")
+                
+                if tool_name:
+                    js[f"Executed {tool_name}{' '*index}"] = f'''
+Input:
+```json
+{json.dumps(i.get("input", {}), indent=2,ensure_ascii=False)}
+```
+
+Output:
+
+```json
+{json.dumps(i.get("output", {}), indent=2,ensure_ascii=False)}
+```'''
+                    index+=1
+                if current_text=="":
+                    self.chat.update_status(f"Executed {tool_name}", elapsed, js)
+
+                
+            if current_text !="":
+                js["Output"] = current_text
+                self.chat.update_status("Generating", elapsed, js)
+
+            self.chat.update_output_text(current_text, True)
+            self.page.update()
+            
+
             
         # Finished
         stop=True
