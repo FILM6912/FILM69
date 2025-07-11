@@ -69,7 +69,9 @@ class App(Ui_app):
             ]
         
         for i in new_tab:self.tabs.tabs.append(i)
-        self.update_history_tab()
+        
+        if self.url.value!="" and self.flow_id!="" and self.api_key!="":
+            self.update_history_tab()
        
     
     def update_history_tab(self):
