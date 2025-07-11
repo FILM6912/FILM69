@@ -90,8 +90,25 @@ class Ui_app:
         self.voice_status=Row([Container(height=35,expand=True,bgcolor="#ff6600",border_radius=10,animate=Animation(500, AnimationCurve.EASE_OUT))for i in range(10)])
         self.stop_button=ElevatedButton("Stop",icon=Icons.STOP,icon_color="red",visible=False,on_click=lambda e: setattr(self, 'stop_gen', True))
         
-        st=Stack([self.chat,self.stop_button],alignment=alignment.bottom_center,height=700)
-        self.page_chat=Column([controls,st],expand=True)
+        self.st=Stack([self.chat,self.stop_button],alignment=alignment.bottom_center,height=700)
+
+        self.tabs=Tabs(
+            selected_index=0,
+            animation_duration=300,
+            tab_alignment=TabAlignment.CENTER,
+            tabs=[
+                    Tab(
+                        tab_content=Icon(Icons.CHAT),
+                        content=Container(
+                            content=self.st, alignment=alignment.center
+                        ),
+                    ),
+                ],
+                expand=1,
+            )
+        self.page_chat=self.tabs
+
+        # self.page_chat=Column([controls,self.st],expand=True)
         # self.page_chat=Column([controls,self.chat,Row([self.new_message,self.send_message,])],expand=True)
 
         self.menu=IconButton(icon=Icons.MENU,icon_size=30,icon_color=Colors.BLUE,on_click=self.open_or_close_chat,rotate=0,animate_rotation=Animation(300, AnimationCurve.EASE_IN_OUT_CIRC))
