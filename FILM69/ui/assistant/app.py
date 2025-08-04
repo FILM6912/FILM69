@@ -32,7 +32,7 @@ class App(Ui_app):
         #     self.whisper.load_model("FILM6912/whisper-small-thai")
         
         self.mic_off=False
-        self.bot_name="เสียวอู่"
+        self.bot_name="เอไอ"
         
         print("App initialized successfully")
 
