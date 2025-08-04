@@ -14,23 +14,27 @@ import os
 import site
 from pathlib import Path
 import uuid
+import requests
+import tempfile
+import wave
 
-on_whisper=False
-if on_whisper:
-    from FILM69.stt import Whisper
+# เปลี่ยนจาก whisper เป็น API
+on_whisper = False
+STT_API_URL = "http://192.168.195.200:9001/transcribe"  # URL ของ API
 
 class App(Ui_app):
     def __init__(self,page:Page):
         super().__init__(page)
         
-        if on_whisper:
-            self.whisper=Whisper()
-            self.whisper.load_model("FILM6912/whisper-small-thai")
+        # ลบส่วน whisper model loading
+        # if on_whisper:
+        #     self.whisper=Whisper()
+        #     self.whisper.load_model("FILM6912/whisper-small-thai")
         
         self.mic_off=False
         self.bot_name="เสียวอู่"
         
-        print("load model success")
+        print("App initialized successfully")
 
         self.chat.user_name="User"
         self.chat.model_name=self.bot_name  
@@ -42,6 +46,8 @@ class App(Ui_app):
         self.url=TextField(label="URL")
         self.flow_id=TextField(label="Flow ID")
         self.api_key=TextField(label="API KEY",password=True, can_reveal_password=True)
+        # เพิ่ม field สำหรับ STT API URL
+        self.stt_api_url=TextField(label="STT API URL", value=STT_API_URL)
         self.save_config_btn=Button("Save",expand=True,on_click=lambda e: self.save_config())
         
         self.load_config()
@@ -62,6 +68,7 @@ class App(Ui_app):
                         self.url,
                         self.flow_id,
                         self.api_key,
+                        self.stt_api_url,  # เพิ่ม STT API URL field
                         Row([self.save_config_btn])
                     ]), alignment=alignment.center
                 ),
@@ -72,8 +79,70 @@ class App(Ui_app):
         
         if self.url.value!="" and self.flow_id!="" and self.api_key!="":
             self.update_history_tab()
-       
-    
+
+    def transcribe_audio_via_api(self, audio_data):
+        """แปลงเสียงเป็นข้อความผ่าน API"""
+        try:
+            # สร้างไฟล์ชั่วคราวสำหรับเสียง
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
+                # แปลง numpy array เป็นไฟล์ WAV
+                with wave.open(temp_file.name, 'wb') as wav_file:
+                    wav_file.setnchannels(self.CHANNELS)
+                    wav_file.setsampwidth(2)  # 16-bit
+                    wav_file.setframerate(self.RATE)
+                    # แปลง float32 กลับเป็น int16
+                    audio_int16 = (audio_data * 32767).astype(np.int16)
+                    wav_file.writeframes(audio_int16.tobytes())
+                
+                temp_file_path = temp_file.name
+            
+            # ส่งไฟล์ไปยัง API
+            with open(temp_file_path, 'rb') as audio_file:
+                files = {
+                    'audio_file': (
+                        'audio.wav', 
+                        audio_file, 
+                        'audio/wav'
+                    )
+                }
+                headers = {
+                    'accept': 'application/json'
+                }
+                
+                response = requests.post(
+                    self.stt_api_url.value or STT_API_URL,
+                    headers=headers,
+                    files=files,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    # สามารถปรับตามโครงสร้าง response ของ API ที่ใช้
+                    if 'text' in result:
+                        return result['text']
+                    elif 'transcription' in result:
+                        return result['transcription']
+                    else:
+                        # ถ้า response เป็น string ตรงๆ
+                        return str(result)
+                else:
+                    print(f"API Error: {response.status_code} - {response.text}")
+                    return ""
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Network error: {e}")
+            return ""
+        except Exception as e:
+            print(f"Transcription error: {e}")
+            return ""
+        finally:
+            # ลบไฟล์ชั่วคราว
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+   
     def update_history_tab(self):
         self.tabs.tabs[1].content=self.chat_session()
         self.page.update()
@@ -93,7 +162,7 @@ class App(Ui_app):
         path_f=self.path_config()
         path=f"{path_f}/config.json"
         if "config.json" not in os.listdir(path_f):
-            data={"url":"","flow_id":"","api_key":""}
+            data={"url":"","flow_id":"","api_key":"","stt_api_url":STT_API_URL}
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -102,11 +171,18 @@ class App(Ui_app):
             self.url.value=self.config["url"]
             self.flow_id.value=self.config["flow_id"]
             self.api_key.value=self.config["api_key"]
+            # โหลด STT API URL
+            self.stt_api_url.value=self.config.get("stt_api_url", STT_API_URL)
 
     def save_config(self):
         path=self.path_config()
         path=f"{path}/config.json"
-        data={"url":self.url.value,"flow_id":self.flow_id.value,"api_key":self.api_key.value}
+        data={
+            "url":self.url.value,
+            "flow_id":self.flow_id.value,
+            "api_key":self.api_key.value,
+            "stt_api_url":self.stt_api_url.value  # บันทึก STT API URL
+        }
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
 
@@ -232,18 +308,20 @@ Output:
         self.SILENCE_DURATION = 2
         for frame in self.audio_capture():
             audio_data = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32768.0
-            if on_whisper:
-                text=self.whisper.predict(audio_data)["text"]
-                print(text)
-                
+            
+            # เปลี่ยนจาก whisper เป็น API call
+            text = self.transcribe_audio_via_api(audio_data)
+            print(f"Transcribed text: {text}")
+            
+            if text:  # ตรวจสอบว่ามีข้อความจาก API หรือไม่
                 if self.mic.icon==Icons.MIC_OFF:
                     if self.bot_name in text:
-                        self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
+                        self.chat.message_input.value = text.replace(self.bot_name,"").strip()
                         self.page.update()
                         self.fn(None)
                         
                 elif self.mic.icon==Icons.MIC:
-                    self.chat.message_input.value = text.replace(self.bot_name,"").replace(" ","")
+                    self.chat.message_input.value = text.replace(self.bot_name,"").strip()
                     self.page.update()
                     self.fn(None)
                 
@@ -315,4 +393,3 @@ def main():
 if __name__=="__main__":
     # app(main,port=7860,view=AppView.FLET_APP_WEB)
     app(run)
-
