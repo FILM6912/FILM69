@@ -71,7 +71,6 @@ ubuntu=[
 
 RAG=[
     "pymilvus",
-    "chromadb",
 ]
 
 UI=[
