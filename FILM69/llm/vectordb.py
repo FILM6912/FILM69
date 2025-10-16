@@ -34,12 +34,12 @@ class VectorDB:
     def __init__(self,path="database", collection_name="data", embedding_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'):
         
         if embedding_name != None:
-            self.embedding_model = SentenceTransformer(embedding_name)
-
-        self.embedding_model=None
+            self.embedding_model = CustomEmbeddingFunction(SentenceTransformer(embedding_name))
+        else:
+            self.embedding_model=None
         
         client = chromadb.PersistentClient(path=path)
-        self.db = client.get_or_create_collection(collection_name,embedding_function=CustomEmbeddingFunction(self.embedding_model))
+        self.db = client.get_or_create_collection(collection_name,embedding_function=self.embedding_model)
         print("Loaded successfully")
     
     def generate_unique_ids(self,existing_ids, num_ids, id_length=10,time_out=60):
