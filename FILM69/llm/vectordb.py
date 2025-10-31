@@ -5,7 +5,8 @@ import chromadb
 import pandas as pd
 import numpy as np
 from typing import TYPE_CHECKING, Optional, Union
-import time,random
+import time, random
+from openai import OpenAI
 from chromadb.api.types import (
     URI,
     CollectionMetadata,
@@ -21,57 +22,112 @@ from chromadb.api.types import (
     ID,
     OneOrMany,
     WhereDocument,
-    EmbeddingFunction
+    EmbeddingFunction,
 )
 
+
 class CustomEmbeddingFunction(EmbeddingFunction):
-    def __init__(self,embedding):
+    def __init__(self, embedding):
+        "CustomEmbeddingFunction(SentenceTransformer(embedding_name))"
         self.model = embedding
+
     def __call__(self, inputs):
         return self.model.encode(inputs).tolist()
 
+
+class OpenaiEmbeding(EmbeddingFunction):
+    def __init__(
+        self,
+        api_key: str = "lm-studio",
+        model: str = "text-embedding-qwen3-embedding-0.6b",
+        base_url: str = "http://192.168.195.200:1234/v1",
+    ):
+        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.model = model
+
+    def __call__(self, input):
+        response = self.client.embeddings.create(
+            model=self.model,
+            input=input,
+        )
+        embedding_vector = response.data[0].embedding
+        return embedding_vector
+
+
 class VectorDB:
-    def __init__(self,path="database", collection_name="data", embedding_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'):
-        
-        if embedding_name != None:
-            self.embedding_model = CustomEmbeddingFunction(SentenceTransformer(embedding_name))
+    def __init__(
+        self,
+        path="database",
+        collection_name="data",
+        embedding=OpenaiEmbeding()
+    ):
+
+        if embedding != None:
+            self.embedding_model = embedding
         else:
-            self.embedding_model=None
-        
+            self.embedding_model = None
+
         client = chromadb.PersistentClient(path=path)
-        self.db = client.get_or_create_collection(collection_name,embedding_function=self.embedding_model)
+        self.db = client.get_or_create_collection(
+            collection_name, embedding_function=self.embedding_model
+        )
         print("Loaded successfully")
-    
-    def generate_unique_ids(self,existing_ids, num_ids, id_length=10,time_out=60):
-        characters = '0123456789'
+
+    def generate_unique_ids(self, existing_ids, num_ids, id_length=10, time_out=60):
+        characters = "0123456789"
         new_ids = []
         start_time = time.time()
         while len(new_ids) < num_ids:
-            new_id = ''.join(random.choices(characters, k=id_length))
-            if new_id not in existing_ids and new_id not in new_ids:new_ids.append(new_id)
-            if time.time() - start_time > time_out: break
+            new_id = "".join(random.choices(characters, k=id_length))
+            if new_id not in existing_ids and new_id not in new_ids:
+                new_ids.append(new_id)
+            if time.time() - start_time > time_out:
+                break
         return new_ids
-    
-    def add_or_update(self, 
-        ids: OneOrMany[ID]=None,
-        embeddings: Optional[Union[OneOrMany[Embedding],OneOrMany[np.ndarray],]] = None,
+
+    def add_or_update(
+        self,
+        ids: OneOrMany[ID] = None,
+        embeddings: Optional[
+            Union[
+                OneOrMany[Embedding],
+                OneOrMany[np.ndarray],
+            ]
+        ] = None,
         metadatas: Optional[OneOrMany[Metadata]] = None,
         documents: Optional[OneOrMany[Document]] = None,
         images: Optional[OneOrMany[Image]] = None,
-        uris: Optional[OneOrMany[URI]] = None,):
+        uris: Optional[OneOrMany[URI]] = None,
+    ):
         try:
-            if ids==None:
+            if ids == None:
                 if embeddings != None:
-                    ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(embeddings))
+                    ids = self.generate_unique_ids(
+                        list(self.get(on_dict=True)["id"].values()), len(embeddings)
+                    )
                 elif documents != None:
-                    ids=self.generate_unique_ids(list(self.get(on_dict=True)["id"].values()),len(documents))
-            self.db.upsert(ids=ids,embeddings=embeddings,metadatas=metadatas,documents=documents,images=images,uris=uris)
+                    ids = self.generate_unique_ids(
+                        list(self.get(on_dict=True)["id"].values()), len(documents)
+                    )
+            self.db.upsert(
+                ids=ids,
+                embeddings=embeddings,
+                metadatas=metadatas,
+                documents=documents,
+                images=images,
+                uris=uris,
+            )
         except Exception as e:
             raise e
-            
-            
-    def query(self,
-        query_embeddings: Optional[Union[OneOrMany[Embedding],OneOrMany[np.ndarray],]] = None,
+
+    def query(
+        self,
+        query_embeddings: Optional[
+            Union[
+                OneOrMany[Embedding],
+                OneOrMany[np.ndarray],
+            ]
+        ] = None,
         query_texts: Optional[OneOrMany[Document]] = None,
         query_images: Optional[OneOrMany[Image]] = None,
         query_uris: Optional[OneOrMany[URI]] = None,
@@ -79,58 +135,111 @@ class VectorDB:
         where: Optional[Where] = None,
         where_document: Optional[WhereDocument] = None,
         include: Include = ["metadatas", "documents", "distances"],
-        on_dict:bool=False,
-        metadata_columns:list[str]=None):
-        result = self.db.query(query_embeddings=query_embeddings,query_texts=query_texts,query_images=query_images,query_uris=query_uris,n_results=n_results,where=where,where_document=where_document,include=include)
-        data_df={
-            "id":result["ids"][0],
-            "document":result["documents"][0],
-            "distance":result["distances"][0],
+        on_dict: bool = False,
+        metadata_columns: list[str] = None,
+    ):
+        result = self.db.query(
+            query_embeddings=query_embeddings,
+            query_texts=query_texts,
+            query_images=query_images,
+            query_uris=query_uris,
+            n_results=n_results,
+            where=where,
+            where_document=where_document,
+            include=include,
+        )
+        data_df = {
+            "id": result["ids"][0],
+            "document": result["documents"][0],
+            "distance": result["distances"][0],
         }
-        if metadata_columns != None:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])[metadata_columns]],axis=1)
+        if metadata_columns != None:
+            out = pd.concat(
+                [
+                    pd.DataFrame(data_df),
+                    pd.DataFrame(result["metadatas"][0])[metadata_columns],
+                ],
+                axis=1,
+            )
         else:
-            try:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])],axis=1).drop(columns=0)
-            except:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"][0])],axis=1)
+            try:
+                out = pd.concat(
+                    [pd.DataFrame(data_df), pd.DataFrame(result["metadatas"][0])],
+                    axis=1,
+                ).drop(columns=0)
+            except:
+                out = pd.concat(
+                    [pd.DataFrame(data_df), pd.DataFrame(result["metadatas"][0])],
+                    axis=1,
+                )
         return out if not on_dict else out.to_dict()
-    
-    def delete(self,
+
+    def delete(
+        self,
         ids: Optional[IDs] = None,
         where: Optional[Where] = None,
-        where_document: Optional[WhereDocument] = None,):
-        self.db.delete(ids=ids,where=where,where_document=where_document)
-    
-    def get(self,  
+        where_document: Optional[WhereDocument] = None,
+    ):
+        self.db.delete(ids=ids, where=where, where_document=where_document)
+
+    def get(
+        self,
         ids: Optional[OneOrMany[ID]] = None,
         where: Optional[Where] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         where_document: Optional[WhereDocument] = None,
         include: Include = ["metadatas", "documents"],
-        on_dict:bool=False,metadata_columns:list[str]=None):
-        result=self.db.get(ids=ids,where=where,limit=limit,offset=offset,where_document=where_document,include=include)
-        data_df={"id":result["ids"],"document":result["documents"]}
-        if metadata_columns != None:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"])[metadata_columns]],axis=1)
+        on_dict: bool = False,
+        metadata_columns: list[str] = None,
+    ):
+        result = self.db.get(
+            ids=ids,
+            where=where,
+            limit=limit,
+            offset=offset,
+            where_document=where_document,
+            include=include,
+        )
+        data_df = {"id": result["ids"], "document": result["documents"]}
+        if metadata_columns != None:
+            out = pd.concat(
+                [
+                    pd.DataFrame(data_df),
+                    pd.DataFrame(result["metadatas"])[metadata_columns],
+                ],
+                axis=1,
+            )
         else:
-            try:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"])],axis=1).drop(columns=0)
-            except:out=pd.concat([pd.DataFrame(data_df),pd.DataFrame(result["metadatas"])],axis=1)
+            try:
+                out = pd.concat(
+                    [pd.DataFrame(data_df), pd.DataFrame(result["metadatas"])], axis=1
+                ).drop(columns=0)
+            except:
+                out = pd.concat(
+                    [pd.DataFrame(data_df), pd.DataFrame(result["metadatas"])], axis=1
+                )
         return out if not on_dict else out.to_dict()
-        
-    
+
+
 if __name__ == "__main__":
-    x=VectorDB(path="database", collection_name="data", embedding_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+    x = VectorDB(
+        path="database",
+        collection_name="data",
+        embedding_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    )
     x.add_or_update(
-        documents= [
-            'This is a document about pineapple',
-            'This is a document about oranges'],
-        ids= ['id1', 'id2'],
-        metadatas= [{"x":1},{"x":2}]
+        documents=[
+            "This is a document about pineapple",
+            "This is a document about oranges",
+        ],
+        ids=["id1", "id2"],
+        metadatas=[{"x": 1}, {"x": 2}],
     )
     print(x.get())
-    df=x.query(query_texts="This is a document about pineapple").apply(lambda x: f"{x:.2f}")
-    df["distance"]=df["distance"].apply(lambda x: f"{x:.2f}")
+    df = x.query(query_texts="This is a document about pineapple").apply(
+        lambda x: f"{x:.2f}"
+    )
+    df["distance"] = df["distance"].apply(lambda x: f"{x:.2f}")
     print(df)
-    x.delete('id1')
-
-    
-    
-        
+    x.delete("id1")
