@@ -1,6 +1,5 @@
 from chromadb import Client
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
 import chromadb
 import pandas as pd
 import numpy as np
@@ -25,14 +24,6 @@ from chromadb.api.types import (
     EmbeddingFunction,
 )
 
-
-class CustomEmbeddingFunction(EmbeddingFunction):
-    def __init__(self, embedding):
-        "CustomEmbeddingFunction(SentenceTransformer(embedding_name))"
-        self.model = embedding
-
-    def __call__(self, inputs):
-        return self.model.encode(inputs).tolist()
 
 
 class OpenaiEmbeding(EmbeddingFunction):
