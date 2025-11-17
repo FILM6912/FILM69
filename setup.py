@@ -87,7 +87,7 @@ SPEECH=[
     "cached_path",
     "ema_pytorch>=0.5.2",
     "hydra-core>=1.3.0",
-    "jieba",
+    # "jieba",
     "pydub",
     "pypinyin",
     "safetensors",
